@@ -63,7 +63,6 @@ def main():
     plt.title("City coordinates → 16x16 grid assignment")
     plt.savefig('../graphs/city_to_grid_mapping.png', dpi=150)
     print("Saved city_to_grid_mapping.png")
-    plt.show()
     
     print("\n" + "=" * 60)
     print("Task 5 Complete!")
