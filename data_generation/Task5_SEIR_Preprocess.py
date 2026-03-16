@@ -12,6 +12,10 @@ from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 
 def main():
+    print("=" * 60)
+    print("Task 5: Data Collection")
+    print("=" * 60)
+    
     # Step 0: Extract coordinates and station names
     tx_pd = pd.read_csv('../src_data/tx_pd.csv')
     seir_df = pd.read_csv('../data_generation/seir_baseline_300days_256cities.csv')
@@ -46,6 +50,10 @@ def main():
 
     save_dir = 'seir_grid_data.npy'
     np.save(save_dir, seir_grid_data)
+    
+    print("\n" + "=" * 60)
+    print("Task 5 Complete!")
+    print("=" * 60)
 
 if __name__ == "__main__":
     main()

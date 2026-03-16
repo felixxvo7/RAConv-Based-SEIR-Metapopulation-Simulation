@@ -33,6 +33,8 @@ def main():
 
     tx_pd = tx_city_sample[['city', 'population', 'lat', 'lng']].reset_index(drop=True)
 
+    print("\ntx_pd (first 5 rows):")
+    print(tx_pd.head())
     save_dir = '../src_data/tx_pd.csv'
     tx_pd.to_csv(save_dir, index=False)
     print("Saved tx_pd.csv")
@@ -49,6 +51,7 @@ def main():
     # Use city names as index and columns for clarity
     distance_df = pd.DataFrame(distance_matrix, index=tx_pd['city'], columns=tx_pd['city'])
 
+    print("\nDistance matrix (first 5 rows):")
     print(distance_df.head())
 
     # Save distance matrix
