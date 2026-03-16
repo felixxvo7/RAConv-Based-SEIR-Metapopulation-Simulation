@@ -1,5 +1,5 @@
 """
-Task 1: Data Collection and Preprocessing
+Task 2: Data Preprocessing
 ==========================================
 This script loads and validates the Texas city population and distance data.
 """
@@ -9,7 +9,7 @@ import numpy as np
 
 def main():
     print("=" * 60)
-    print("Task 1: Data Collection and Preprocessing")
+    print("Task 2: Data Preprocessing")
     print("=" * 60)
     
     # Load data
@@ -74,7 +74,7 @@ def main():
     
     # Summary
     print("\n" + "=" * 60)
-    print("Task 1 Validation Summary")
+    print("Task 2 Validation Summary")
     print("=" * 60)
     print(f"Cities loaded: {len(tx_pd)}")
     print(f"Total population: {total_pop:,}")
@@ -85,7 +85,7 @@ def main():
     
     all_passed = pop_ok and lat_ok and lng_ok and (duplicates == 0) and is_symmetric and (violations == 0)
     if all_passed:
-        print("\n✓ All Task 1 checks PASSED!")
+        print("\n✓ All Task 2 checks PASSED!")
     else:
         print("\n⚠ Some checks did not pass - review above")
     

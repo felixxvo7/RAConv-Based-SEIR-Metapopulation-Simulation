@@ -1,5 +1,5 @@
 """
-Task 3: SEIR ODE Integration (Optimized with Time-Varying Interventions)
+Task 4: SEIR ODE Integration (Optimized with Time-Varying Interventions)
 =========================================================================
 Implements a coupled SEIR metapopulation model across 256 Texas cities.
 
@@ -428,7 +428,7 @@ def save_results(results, t, tx_pd):
 
 def main():
     print("=" * 60)
-    print("Task 3: SEIR ODE Integration (Time-Varying Interventions)")
+    print("Task 4: SEIR ODE Integration (Time-Varying Interventions)")
     print("=" * 60)
     
     # Load data
@@ -451,7 +451,7 @@ def main():
     save_results(results, t, tx_pd)
     
     print("\n" + "=" * 60)
-    print("Task 3 Complete!")
+    print("Task 4 Complete!")
     print("=" * 60)
 
 

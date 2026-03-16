@@ -1,5 +1,5 @@
 """
-Task 2: Mobility Matrix Design
+Task 3: Mobility Matrix Design
 ==============================
 Implements a gravity-based mobility matrix Θ = [θ_ij] representing movement rates between cities.
 
@@ -101,7 +101,7 @@ def validate_mobility_matrix(theta, tx_pd, alpha=2.0):
 
 def main():
     print("=" * 60)
-    print("Task 2: Mobility Matrix Design")
+    print("Task 3: Mobility Matrix Design")
     print("=" * 60)
     
     # Load data
@@ -140,7 +140,7 @@ def main():
     print(f"✓ Saved mobility matrix to mobility_matrix.csv")
     
     print("\n" + "=" * 60)
-    print("Task 2 Complete!")
+    print("Task 3 Complete!")
     print("=" * 60)
 
 
