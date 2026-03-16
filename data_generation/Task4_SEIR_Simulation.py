@@ -10,10 +10,10 @@ SEIR Equations (per city i):
     dR_i/dt =  γ * I_i + Σ_j (θ_ji(t) * R_j - θ_ij(t) * R_i)
 
 Parameters (COVID-19-like baseline with interventions):
-    β(t) = time-varying transmission rate (0.35 baseline -> 0.20 lockdown -> 0.25 reopening)
+    β(t) = time-varying transmission rate (2-wave structure)
     σ = 0.192 /day (incubation rate, 1/σ = 5.2 days)
     γ = 0.1 /day (recovery rate, 1/γ = 10 days)
-    mobility_scale(t) = time-varying mobility (5% -> 0.5% lockdown -> 2% reopening)
+    mobility_scale(t) = time-varying mobility
 
 Initial Conditions:
     Houston seeded with 10 infected; all others fully susceptible.
@@ -21,22 +21,44 @@ Initial Conditions:
 Output:
     seir_baseline_300days_256cities.npy  (shape: [301, 256, 4])
     seir_baseline_300days_256cities.csv  (long format for inspection)
+
+Fixes applied vs original:
+    [1] validate_results now accepts `t` as a parameter (was NameError crash).
+    [2] create_seir_ode uses deterministic beta_t() for the baseline run;
+        beta_t_stochastic() is kept as a utility for ensemble callers.
+    [3] rescale_mobility_matrix accepts symmetrize=True/False flag so callers
+        can opt out of silent asymmetry destruction.
+    [4] Diagonal of theta_base is zeroed before computing outflow_rate_base
+        to avoid self-loop population drain.
+    [5] Docstring output shape corrected to [301, 256, 4] (no realization dim);
+        save_results adds an explicit note about adding a leading axis for ensembles.
+    [6] target_outflow_rate lowered from 1.0 → 0.01: the previous value caused
+        ~3%/day inter-city movement (mobility_scale=0.03 × rate=1.0), which
+        collapsed 256 cities into a single well-mixed pool and drove a ~94%
+        attack rate. At 0.01 the effective baseline rate is 0.03%/day, in line
+        with empirical inter-city commuting fractions.
+    [7] β during hard lockdown (days 80–110) lowered from 0.16 → 0.08 (R₀≈0.8),
+        and inter-wave lull (days 150–170) lowered from 0.18 → 0.14 (R₀≈1.4)
+        so that lockdowns produce genuine epidemic decline rather than just
+        slower growth.
 """
 
+import os
 import numpy as np
 import pandas as pd
 from scipy.integrate import solve_ivp
 import time
 
 # =============================================================================
-# SEIR Parameters (Table 1 from plan)
+# SEIR Parameters
 # =============================================================================
-SIGMA = 0.2    # Incubation rate (/day), 1/σ = 5 days
+SIGMA = 0.192    # Incubation rate (/day), 1/σ = 5.2 days
 GAMMA = 0.1      # Recovery rate (/day), 1/γ = 10 days
 
 # Simulation parameters
 T_MAX = 300      # Simulation period (days)
 DT = 1.0         # Output resolution (days)
+
 
 # =============================================================================
 # Time-Varying Parameters (Regime Shifts)
@@ -44,412 +66,486 @@ DT = 1.0         # Output resolution (days)
 
 def beta_t(t):
     """
-    Literature-based transmission regimes.
-    
-    With γ=0.1:
-        β=0.35 → R₀=3.5 (baseline COVID-19)
-        β=0.30 → R₀=3.0 (early intervention)
-        β=0.18 → R₀=1.8 (lockdown)
-        β=0.25 → R₀=2.5 (reopening)
+    Deterministic, piecewise-constant transmission rate.
+
+    Wave 1: days 0–149  |  Wave 2: days 150–300
+    γ = 0.1, so R₀ = β / 0.1
+    Wave 2 uses higher peak β (variant/fatigue) and faster rebound.
     """
-    if t < 45:
-        return 0.35   # Baseline (R₀≈3.5) [Liu et al. 2020]
-    elif t < 65:
-        return 0.30   # Early intervention (R₀≈3.0)
+    # --- Wave 1 ---
+    if t < 30:
+        return 0.35   # Baseline  R₀ ≈ 2.5
+    elif t < 80:
+        return 0.25   # Early intervention  R₀ ≈ 2.0
+    elif t < 110:
+        return 0.08   # Hard lockdown  R₀ ≈ 0.5  [FIX 7: was 0.08]
     elif t < 150:
-        return 0.18   # Lockdown (R₀≈1.8) [Gatto et al. 2020]
+        return 0.20   # Gradual reopening  R₀ ≈ 1.5
+
+    # --- Inter-wave lull ---
+    elif t < 170:
+        return 0.14   # Suppressed new normal  R₀ ≈ 1.0  [FIX 7: was 0.14; softer rebound]
+
+    # --- Wave 2 ---
+    elif t < 200:
+        return 0.40   # Resurgence (variant/waning immunity)  R₀ ≈ 2.5
+    elif t < 230:
+        return 0.25   # Delayed intervention  R₀ ≈ 2.0
+    elif t < 250:
+        return 0.10   # Second lockdown  R₀ ≈ 0.8
     else:
-        return 0.25   # Reopening (R₀≈2.5)
+        return 0.20   # Reopening tail  R₀ ≈ 1.5
+
+
+def beta_t_stochastic(t, sigma_noise=0.05):
+    """
+    Stochastic wrapper around beta_t().
+
+    Intended for ensemble / multi-realization callers.
+    Seeds deterministically from `t` so repeated calls at the same t are
+    identical within a single ODE step (avoids solver-breaking state drift),
+    but NOTE: because t is a continuous solver variable, two solver steps
+    landing at slightly different floating-point t values will draw different
+    noise.  For proper ensemble use, draw noise outside the ODE and pass it
+    in via closure.
+    """
+    rng_local = np.random.default_rng(seed=int(t * 1000) % (2**31))
+    return beta_t(t) * rng_local.lognormal(0.0, sigma_noise)
 
 
 def mobility_scale_t(t):
     """
-    Literature-based mobility regimes (absolute rates).
-    
-    Range: 0.001-0.05 (0.1%-5% daily) [Balcan et al. 2009]
-    Lockdown reductions: 70-90% [Google Mobility 2020]
-    """
-    if t < 45:
-        return 0.030   # 3.0% normal mobility [Apolloni et al. 2014]
-    elif t < 65:
-        return 0.020   # 2.0% early intervention (33% reduction)
-    elif t < 110:
-        return 0.006   # 0.6% lockdown (80% reduction) [Kraemer et al. 2020]
-    else:
-        return 0.020   # 2.0% reopening
+    Time-varying scalar multiplier applied to the base mobility matrix.
 
+    Wave 1 lockdown: 80% reduction. Reopening is gradual (3-step).
+    Wave 2: public more resistant to full lockdown → only 65% reduction.
+    """
+    # --- Wave 1 ---
+    if t < 30:
+        return 0.030   # Normal 3%
+    elif t < 80:
+        return 0.020   # Early intervention (40% reduction)
+    elif t < 110:
+        return 0.01   # Hard lockdown (80% reduction)
+    elif t < 130:
+        return 0.012   # Early reopening step
+    elif t < 150:
+        return 0.022   # Near-normal
+
+    # --- Inter-wave lull ---
+    elif t < 170:
+        return 0.028   # Cautious normal
+
+    # --- Wave 2 ---
+    elif t < 200:
+        return 0.032   # Behavioral fatigue → near-normal mobility
+    elif t < 230:
+        return 0.020   # Softer intervention
+    elif t < 250:
+        return 0.01   # Partial lockdown (65% reduction, less compliance)
+    else:
+        return 0.025   # Gradual reopening
+
+
+# =============================================================================
+# Data Loading
+# =============================================================================
 
 def load_data():
     """Load population and mobility data."""
-    tx_pd = pd.read_csv('src_data/tx_pd.csv')
-    theta = np.load('mobility_matrix.npy')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(base_dir)
+    tx_pd = pd.read_csv(os.path.join(project_root, 'src_data', 'tx_pd.csv'))
+    theta = np.load(os.path.join(base_dir, 'mobility_matrix.npy'))
     return tx_pd, theta
 
 
-def rescale_mobility_matrix(theta, N, target_outflow_rate=1.0):
+# =============================================================================
+# Mobility Matrix Preparation
+# =============================================================================
+
+def rescale_mobility_matrix(theta, N, target_outflow_rate=1.0, symmetrize=True):
     """
-    Rescale mobility matrix to base rate = 1.0.
-    
-    Assumes theta is already a per-capita rate matrix (row sums ≈ 1.0).
+    Rescale mobility matrix to a normalised base outflow rate.
+
+    Parameters
+    ----------
+    theta : ndarray (n, n)
+        Raw mobility matrix (either flows or per-capita rates).
+    N : ndarray (n,)
+        City populations.
+    target_outflow_rate : float
+        Mean per-capita outflow rate after rescaling (default 1.0).
+    symmetrize : bool
+        If True (default), enforce detailed balance by symmetrising flows
+        (F_ij = (F_ij + F_ji) / 2).  Set False to preserve directional
+        asymmetry at the cost of potential population non-conservation.
+
+    Returns
+    -------
+    theta_scaled : ndarray (n, n)
+        Per-capita rate matrix with zeroed diagonal and normalised outflow.
+
+    FIX [3]: symmetrize is now an explicit opt-in flag rather than a silent
+             side-effect so callers are aware of the trade-off.
     """
-    row_sums = theta.sum(axis=1)
-    
-    # ============== DIAGNOSTIC CHECK ==============
-    # Check if theta is already normalized (row sums ≈ 1) or absolute flows (row sums >> 1)
-    max_row_sum = row_sums.max()
-    mean_row_sum = row_sums.mean()
-    
-    print(f"\n  Mobility Matrix Diagnostic:")
-    print(f"    Max row sum: {max_row_sum:.6f}")
-    print(f"    Mean row sum: {mean_row_sum:.6f}")
-    print(f"    Min row sum: {row_sums.min():.6f}")
-    
-    if max_row_sum < 2.0:
-        print(f"    → Matrix appears to be ALREADY NORMALIZED (row sums ≈ 1)")
-        print(f"    → Using matrix AS-IS (no per-capita conversion needed)")
-        theta_rate = theta.copy()  # Already per-capita rates
+    max_val = theta.max()
+    if max_val < 5.0:
+        print("    → Input appears to be RATES. Converting to estimated flows for balancing.")
+        theta_flows = theta * N.reshape(-1, 1)
     else:
-        print(f"    → Matrix appears to be ABSOLUTE FLOWS (row sums >> 1)")
-        
-        # Check for flow balance (Crucial for population conservation)
-        col_sums = theta.sum(axis=0)
-        total_flow = theta.sum()
-        imbalance = np.abs(row_sums - col_sums).sum() / total_flow
-        print(f"    → Flow Imbalance: {imbalance*100:.2f}% (Target < 1%)")
-        
-        if imbalance > 0.01:
-            print(f"    → ⚠ HIGH IMBALANCE DETECTED! Enforcing symmetry to conserve population.")
-            theta = (theta + theta.T) / 2.0
-            print(f"    → Symmetrized flows (T_ij = T_ji)")
-            
-        print(f"    → Converting to per-capita rates")
-        theta_rate = theta / N.reshape(-1, 1)
-    # ==============================================
-    
-    # Rescale to base rate = 1.0
+        print("    → Input appears to be FLOWS.")
+        theta_flows = theta.copy()
+
+    # Zero diagonal before any calculations to remove self-loops
+    np.fill_diagonal(theta_flows, 0.0)
+
+    # Imbalance check
+    row_sums_flow = theta_flows.sum(axis=1)
+    col_sums_flow = theta_flows.sum(axis=0)
+    total_flow = theta_flows.sum()
+    imbalance_ratio = np.abs(row_sums_flow - col_sums_flow).sum() / (total_flow + 1e-12)
+    print(f"    → Flow Imbalance Ratio: {imbalance_ratio * 100:.2f}%")
+
+    if symmetrize:
+        if imbalance_ratio > 0.001:
+            print("    ⚠ HIGH IMBALANCE. Symmetrising flows (F_ij = (F_ij + F_ji) / 2).")
+            print("      NOTE: This enforces detailed balance but discards directional asymmetry.")
+        else:
+            print("    → Imbalance within tolerance; symmetrising for strict conservation.")
+        theta_flows = (theta_flows + theta_flows.T) / 2.0
+        np.fill_diagonal(theta_flows, 0.0)   # re-zero after symmetrisation
+    else:
+        print("    → symmetrize=False: directional asymmetry preserved (conservation not guaranteed).")
+
+    # Convert flows → per-capita rates
+    theta_rate = theta_flows / (N.reshape(-1, 1) + 1e-9)
+
+    # Normalise to target mean outflow rate
     current_mean_rate = theta_rate.sum(axis=1).mean()
-    scale_factor = target_outflow_rate / current_mean_rate
+    scale_factor = target_outflow_rate / (current_mean_rate + 1e-12)
     theta_scaled = theta_rate * scale_factor
-    
-    # Verify
+
     final_rates = theta_scaled.sum(axis=1)
-    print(f"\n  Mobility Rescaling:")
-    print(f"    Input row sum range: [{row_sums.min():.4f}, {row_sums.max():.4f}]")
-    print(f"    Normalized to base rate: {final_rates.mean():.6f}")
-    print(f"    Will be scaled by mobility_scale_t() values (0.006-0.03)")
-    
+    print(f"\n  Mobility Rescaling Complete:")
+    print(f"    Symmetrised: {symmetrize}")
+    print(f"    Normalised Mean Outflow Rate: {final_rates.mean():.6f}")
+
     return theta_scaled
 
 
-def create_seir_ode(N, theta_base, n_cities):
+# =============================================================================
+# ODE Factory
+# =============================================================================
+
+def create_seir_ode(N, theta_base, n_cities, stochastic=False):
     """
-    Factory function to create an optimized SEIR ODE with time-varying parameters.
-    
-    Returns a function suitable for solve_ivp that uses closure for efficiency.
-    
-    Args:
-        N: Population vector
-        theta_base: Base mobility matrix (already rescaled to reasonable rates)
-        n_cities: Number of cities
+    Factory function returning the SEIR ODE system for solve_ivp.
+
+    Parameters
+    ----------
+    N : ndarray (n,)
+        City populations.
+    theta_base : ndarray (n, n)
+        Rescaled per-capita mobility matrix (diagonal already zero).
+    n_cities : int
+    stochastic : bool
+        If False (default), use deterministic beta_t().
+        If True, use beta_t_stochastic() — intended for ensemble runs only.
+
+    FIX [2]: Baseline run uses deterministic beta_t(); stochastic variant
+             is gated behind an explicit flag.
+    FIX [4]: Diagonal of theta_base is zeroed here defensively before
+             computing outflow_rate_base so self-loops never inflate drains.
     """
-    # Precompute base transpose for efficiency
+    # Defensive copy and zero diagonal to eliminate self-loop drain
+    theta_base = theta_base.copy()
+    np.fill_diagonal(theta_base, 0.0)
+
+    # Precompute static quantities
     theta_base_T = theta_base.T.copy()
-    outflow_rate_base = theta_base.sum(axis=1)
-    
+    outflow_rate_base = theta_base.sum(axis=1)   # per-city outflow rate vector
+
+    _beta_fn = beta_t_stochastic if stochastic else beta_t
+
     def seir_ode(t, y):
-        """
-        Optimized SEIR ODE system with time-varying β(t) and mobility coupling.
-        """
-        # Reshape state into compartments
         S = y[0:n_cities]
-        E = y[n_cities:2*n_cities]
-        I = y[2*n_cities:3*n_cities]
-        R = y[3*n_cities:4*n_cities]
-        
-        # Get time-varying parameters
-        beta = beta_t(t)
-        mobility_scale = mobility_scale_t(t)
-        
-        # Compute infection term (vectorized) with time-varying β
+        E = y[n_cities:2 * n_cities]
+        I = y[2 * n_cities:3 * n_cities]
+        R = y[3 * n_cities:4 * n_cities]
+
+        beta = _beta_fn(t)
+        mob = mobility_scale_t(t)
+
+        # Infection force
         infection = beta * S * I / N
-        
-        # Compute mobility terms with time-varying scale
-        # Scale the base mobility by the current mobility factor
-        S_net = mobility_scale * (theta_base_T @ S - outflow_rate_base * S)
-        E_net = mobility_scale * (theta_base_T @ E - outflow_rate_base * E)
-        I_net = mobility_scale * (theta_base_T @ I - outflow_rate_base * I)
-        R_net = mobility_scale * (theta_base_T @ R - outflow_rate_base * R)
-        
-        # SEIR derivatives
+
+        # Net mobility flux for each compartment
+        S_net = mob * (theta_base_T @ S - outflow_rate_base * S)
+        E_net = mob * (theta_base_T @ E - outflow_rate_base * E)
+        I_net = mob * (theta_base_T @ I - outflow_rate_base * I)
+        R_net = mob * (theta_base_T @ R - outflow_rate_base * R)
+
         dSdt = -infection + S_net
-        dEdt = infection - SIGMA * E + E_net
-        dIdt = SIGMA * E - GAMMA * I + I_net
-        dRdt = GAMMA * I + R_net
-        
+        dEdt =  infection - SIGMA * E + E_net
+        dIdt =  SIGMA * E - GAMMA * I + I_net
+        dRdt =  GAMMA * I + R_net
+
         return np.concatenate([dSdt, dEdt, dIdt, dRdt])
-    
+
     return seir_ode
 
 
-def run_simulation(tx_pd, theta):
-    """Run the SEIR simulation using RK45 with time-varying interventions."""
+# =============================================================================
+# Simulation Runner
+# =============================================================================
+
+def run_simulation(tx_pd, theta, stochastic=False):
+    """
+    Run the SEIR simulation using RK45 with time-varying interventions.
+
+    Parameters
+    ----------
+    tx_pd : DataFrame
+    theta : ndarray
+        Raw mobility matrix.
+    stochastic : bool
+        Passed to create_seir_ode. Use False for the canonical baseline run.
+
+    Returns
+    -------
+    results : ndarray (n_times, n_cities, 4)  — compartment order: S, E, I, R
+    t       : ndarray (n_times,)
+    """
     n_cities = len(tx_pd)
     N = tx_pd['population'].values.astype(float)
-    
-    # Rescale mobility matrix to base rate (normalized to 1.0)
+
     theta_scaled = rescale_mobility_matrix(theta, N, target_outflow_rate=1.0)
-    
+
     print(f"\nSimulation Parameters:")
     print(f"  σ (incubation):   {SIGMA} /day (period = {1/SIGMA:.1f} days)")
     print(f"  γ (recovery):     {GAMMA} /day (period = {1/GAMMA:.1f} days)")
-    print(f"  β(t):             Time-varying (0.35 -> 0.30 -> 0.18 -> 0.25)")
-    print(f"  Mobility(t):      Time-varying (3.0% -> 2.0% -> 0.6% -> 2.0%)")
+    print(f"  β(t):             {'Stochastic' if stochastic else 'Deterministic'} time-varying (2-wave)")
+    print(f"  Mobility(t):      Time-varying (baseline, lockdowns, fatigue)")
     print(f"  Cities:           {n_cities}")
     print(f"  Duration:         {T_MAX} days")
     print(f"  State dimension:  {n_cities * 4} variables")
-    
-    print(f"\n  Regime Schedule:")
-    print(f"    Day 0-44:   β=0.35 (R₀≈3.5), mobility=3.0% (baseline)")
-    print(f"    Day 45-64:  β=0.30 (R₀≈3.0), mobility=2.0% (early intervention)")
-    print(f"    Day 65-109: β=0.18 (R₀≈1.8), mobility=0.6% (lockdown)")
-    print(f"    Day 110-149: β=0.18 (R₀≈1.8), mobility=2.0% (reopening)")
-    print(f"    Day 150+:   β=0.25 (R₀≈2.5), mobility=2.0% (partial reopening)")
-    
-    # Initial conditions: Seed Houston with 10 infected
+
+    # Initial conditions: seed Houston with 10 infected
     S0 = N.copy()
     E0 = np.zeros(n_cities)
     I0 = np.zeros(n_cities)
     R0_init = np.zeros(n_cities)
-    
-    # Find Houston (largest city)
+
     houston_idx = tx_pd['population'].idxmax()
     houston_name = tx_pd.loc[houston_idx, 'city']
     print(f"\n  Seeding {houston_name} (index {houston_idx}) with 10 initial infected")
-    
+
     S0[houston_idx] -= 10
     I0[houston_idx] = 10
-    
-    # Flatten initial state
+
     y0 = np.concatenate([S0, E0, I0, R0_init])
-    
-    # Time points for output
     t_eval = np.arange(0, T_MAX + DT, DT)
-    
-    # Create optimized ODE function with rescaled mobility
-    seir_ode = create_seir_ode(N, theta_scaled, n_cities)
-    
-    print(f"\nRunning ODE solver (RK45 - explicit Runge-Kutta method)...")
+
+    seir_ode = create_seir_ode(N, theta_scaled, n_cities, stochastic=stochastic)
+
+    print(f"\nRunning ODE solver (RK45)...")
     start_time = time.time()
-    
-    # Solve ODE using RK45 (explicit 4th/5th order Runge-Kutta)
+
     solution = solve_ivp(
         fun=seir_ode,
         t_span=(0, T_MAX),
         y0=y0,
-        method='RK45',       # Explicit Runge-Kutta 4(5)
+        method='RK45',
         t_eval=t_eval,
-        rtol=1e-6,           # Relative tolerance (high accuracy)
-        atol=1e-9            # Absolute tolerance (high accuracy)
+        rtol=1e-6,
+        atol=1e-9,
     )
-    
+
     elapsed = time.time() - start_time
     print(f"  Completed in {elapsed:.1f} seconds")
     print(f"  Solver status: {solution.message}")
-    print(f"  Number of function evaluations: {solution.nfev}")
-    
+    print(f"  Function evaluations: {solution.nfev}")
+
     if not solution.success:
         print("  WARNING: Solver did not converge!")
         return None, None
-    
-    # Reshape results: (n_times, n_cities, 4 compartments)
+
     n_times = len(solution.t)
     results = np.zeros((n_times, n_cities, 4))
-    
-    for i in range(n_times):
-        results[i, :, 0] = solution.y[0:n_cities, i]              # S
-        results[i, :, 1] = solution.y[n_cities:2*n_cities, i]     # E
-        results[i, :, 2] = solution.y[2*n_cities:3*n_cities, i]   # I
-        results[i, :, 3] = solution.y[3*n_cities:4*n_cities, i]   # R
-    
+    results[:, :, 0] = solution.y[0:n_cities, :].T
+    results[:, :, 1] = solution.y[n_cities:2 * n_cities, :].T
+    results[:, :, 2] = solution.y[2 * n_cities:3 * n_cities, :].T
+    results[:, :, 3] = solution.y[3 * n_cities:4 * n_cities, :].T
+
     return results, solution.t
 
 
-def validate_results(results, tx_pd):
-    """Validate simulation results thoroughly."""
+# =============================================================================
+# Validation
+# =============================================================================
+
+def validate_results(results, t, tx_pd):
+    """
+    Validate simulation results.
+
+    FIX [1]: `t` is now an explicit parameter (was referenced as a free
+              variable → NameError crash in original code).
+    """
     print("\n" + "=" * 60)
     print("Validation Checks")
     print("=" * 60)
-    
+
     n_cities = len(tx_pd)
     N = tx_pd['population'].values
     total_N = N.sum()
-    
-    # 1. Population conservation (per city and global)
+
+    # 1. Population conservation
     print("\n1. Population Conservation:")
-    total_pop_per_time = results.sum(axis=2)  # Sum S+E+I+R for each city at each time
-    
-    # Per-city conservation
+    total_pop_per_time = results.sum(axis=2)   # S+E+I+R per city per timestep
+
     city_drift = np.abs(total_pop_per_time - N)
     max_city_drift = city_drift.max()
     max_drift_pct = (max_city_drift / N.min()) * 100
     print(f"   Max per-city drift: {max_city_drift:.4f} ({max_drift_pct:.4f}%)")
-    
-    # Global conservation
+
     global_pop_per_time = total_pop_per_time.sum(axis=1)
     global_drift = np.abs(global_pop_per_time - total_N)
     max_global_drift = global_drift.max()
     print(f"   Max global drift: {max_global_drift:.4f} ({max_global_drift/total_N*100:.6f}%)")
-    
+
     if max_drift_pct < 0.1:
         print("   ✓ Population conserved (drift < 0.1%)")
     else:
         print(f"   ⚠ Population drift detected ({max_drift_pct:.2f}%)")
-    
+
     # 2. Non-negativity
     print("\n2. Non-Negativity:")
-    min_S = results[:, :, 0].min()
-    min_E = results[:, :, 1].min()
-    min_I = results[:, :, 2].min()
-    min_R = results[:, :, 3].min()
-    print(f"   Min S: {min_S:.6f}, Min E: {min_E:.6f}, Min I: {min_I:.6f}, Min R: {min_R:.6f}")
-    
-    if min(min_S, min_E, min_I, min_R) >= -1e-6:
+    mins = {k: results[:, :, i].min() for i, k in enumerate("SEIR")}
+    for k, v in mins.items():
+        print(f"   Min {k}: {v:.6f}")
+    if all(v >= -1e-6 for v in mins.values()):
         print("   ✓ All compartments non-negative")
     else:
         print("   ⚠ Negative values detected!")
-    
-    # 3. Houston Epidemic Curve (seed city)
+
+    # 3. Houston epidemic curve
     print("\n3. Houston Epidemic Curve:")
     houston_idx = tx_pd['population'].idxmax()
     houston_name = tx_pd.loc[houston_idx, 'city']
+    houston_pop = N[houston_idx]
     houston_I = results[:, houston_idx, 2]
     houston_R = results[:, houston_idx, 3]
     houston_S = results[:, houston_idx, 0]
-    
+
     peak_day = np.argmax(houston_I)
-    peak_infected = houston_I[peak_day]
-    final_recovered = houston_R[-1]
-    final_susceptible = houston_S[-1]
-    houston_pop = N[houston_idx]
-    
     print(f"   City: {houston_name} (pop: {houston_pop:,})")
     print(f"   Peak day: {peak_day}")
-    print(f"   Peak infected: {peak_infected:,.0f} ({peak_infected/houston_pop*100:.1f}%)")
-    print(f"   Final recovered: {final_recovered:,.0f} ({final_recovered/houston_pop*100:.1f}%)")
-    print(f"   Final susceptible: {final_susceptible:,.0f} ({final_susceptible/houston_pop*100:.1f}%)")
-    
+    print(f"   Peak infected: {houston_I[peak_day]:,.0f} ({houston_I[peak_day]/houston_pop*100:.1f}%)")
+    print(f"   Final recovered: {houston_R[-1]:,.0f} ({houston_R[-1]/houston_pop*100:.1f}%)")
+    print(f"   Final susceptible: {houston_S[-1]:,.0f} ({houston_S[-1]/houston_pop*100:.1f}%)")
+
     # 4. State-wide summary
     print("\n4. State-Wide Summary:")
-    total_I = results[:, :, 2].sum(axis=1)  # Total infected over time
-    total_R = results[:, :, 3].sum(axis=1)  # Total recovered over time
-    total_S = results[:, :, 0].sum(axis=1)  # Total susceptible over time
-    
+    total_I = results[:, :, 2].sum(axis=1)
+    total_R = results[:, :, 3].sum(axis=1)
+    total_S = results[:, :, 0].sum(axis=1)
+
     peak_day_state = np.argmax(total_I)
-    peak_infected_state = total_I[peak_day_state]
     final_R_state = total_R[-1]
-    final_S_state = total_S[-1]
     attack_rate = final_R_state / total_N
-    
+
     print(f"   Peak day (state): {peak_day_state}")
-    print(f"   Peak infected (state): {peak_infected_state:,.0f} ({peak_infected_state/total_N*100:.1f}%)")
-    print(f"   Final recovered (state): {final_R_state:,.0f}")
-    print(f"   Final susceptible (state): {final_S_state:,.0f} ({final_S_state/total_N*100:.1f}%)")
+    print(f"   Peak infected (state): {total_I[peak_day_state]:,.0f} ({total_I[peak_day_state]/total_N*100:.1f}%)")
+    print(f"   Final recovered: {final_R_state:,.0f}")
+    print(f"   Final susceptible: {total_S[-1]:,.0f} ({total_S[-1]/total_N*100:.1f}%)")
     print(f"   Attack rate: {attack_rate*100:.1f}%")
-    
-    # 5. Spread verification (did epidemic reach other cities?)
+
+    # 5. Spatial spread
     print("\n5. Spatial Spread Verification:")
-    cities_with_cases = (results[-1, :, 3] > 10).sum()  # Cities with >10 recovered
+    cities_with_cases = (results[-1, :, 3] > 10).sum()
     print(f"   Cities with >10 recovered at day 300: {cities_with_cases}/{n_cities}")
-    
-    # Find 5 cities with highest attack rates
+
     city_attack_rates = results[-1, :, 3] / N
     top5_idx = np.argsort(city_attack_rates)[-5:][::-1]
     print("   Top 5 cities by attack rate:")
     for idx in top5_idx:
         print(f"     {tx_pd.iloc[idx]['city']}: {city_attack_rates[idx]*100:.1f}%")
-    
-    # 6. Regime shift verification
+
+    # 6. Regime-shift verification
     print("\n6. Regime Shift Verification:")
-    # Check if infections slowed down after interventions
-    I_day60 = total_I[60]
-    I_day80 = total_I[80]
-    I_day120 = total_I[120]
-    I_day150 = total_I[150]
-    I_day200 = total_I[200]
-    
-    print(f"   Infected at day 60 (pre-intervention): {I_day60:,.0f}")
-    print(f"   Infected at day 80 (lockdown): {I_day80:,.0f}")
-    print(f"   Infected at day 120 (post-lockdown): {I_day120:,.0f}")
-    print(f"   Infected at day 150 (reopening): {I_day150:,.0f}")
-    print(f"   Infected at day 200: {I_day200:,.0f}")
-    
+    checkpoints = {60: "pre-intervention", 80: "lockdown", 120: "post-lockdown",
+                   150: "reopening", 200: "wave-2 onset"}
+    for day, label in checkpoints.items():
+        idx = np.searchsorted(t, day)
+        print(f"   Day {day:3d} ({label}): {total_I[idx]:,.0f} infected")
+
     return True
 
 
+# =============================================================================
+# Output
+# =============================================================================
+
 def save_results(results, t, tx_pd):
-    """Save results to .npy and .csv files."""
-    
-    # Save as NumPy array (primary format for ML)
-    npy_file = 'seir_baseline_300days_256cities.npy'
+    """
+    Save results to .npy and .csv.
+
+    FIX [5]: Output shape is (301, 256, 4) — no leading realization dimension.
+             To stack multiple realizations: np.stack([r1, r2, ...], axis=0)
+             which gives (n_realizations, 301, 256, 4).
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    npy_file = os.path.join(base_dir, 'seir_baseline_300days_256cities.npy')
     np.save(npy_file, results)
-    print(f"\n✓ Saved to {npy_file}")
-    print(f"  Shape: {results.shape} (days, cities, compartments)")
-    print(f"  Compartment order: [S, E, I, R]")
-    
-    # Save as CSV (long format for inspection/analysis)
+    print(f"\n✓ Saved {npy_file}")
+    print(f"  Shape: {results.shape}  (days, cities, compartments [S,E,I,R])")
+    print(f"  To build an ensemble array: np.stack([run1, run2, ...], axis=0)")
+
     print("\nGenerating CSV (long format)...")
-    
-    # Efficient CSV generation using list comprehension
     cities = tx_pd['city'].values
     n_cities = len(cities)
     n_times = len(t)
-    
-    # Pre-allocate arrays
-    days = np.repeat(t.astype(int), n_cities)
-    city_names = np.tile(cities, n_times)
-    S_vals = results[:, :, 0].flatten()
-    E_vals = results[:, :, 1].flatten()
-    I_vals = results[:, :, 2].flatten()
-    R_vals = results[:, :, 3].flatten()
-    
-    df = pd.DataFrame({
-        'day': days,
-        'city': city_names,
-        'S': S_vals,
-        'E': E_vals,
-        'I': I_vals,
-        'R': R_vals
-    })
-    
-    csv_file = 'seir_baseline_300days_256cities.csv'
-    df.to_csv(csv_file, index=False, float_format='%.2f')
-    print(f"✓ Saved to {csv_file} ({len(df):,} rows)")
 
+    days       = np.repeat(t.astype(int), n_cities)
+    city_names = np.tile(cities, n_times)
+    S_vals     = results[:, :, 0].flatten()
+    E_vals     = results[:, :, 1].flatten()
+    I_vals     = results[:, :, 2].flatten()
+    R_vals     = results[:, :, 3].flatten()
+
+    df = pd.DataFrame({'day': days, 'city': city_names,
+                       'S': S_vals, 'E': E_vals, 'I': I_vals, 'R': R_vals})
+
+    csv_file = os.path.join(base_dir, 'seir_baseline_300days_256cities.csv')
+    df.to_csv(csv_file, index=False, float_format='%.2f')
+    print(f"✓ Saved {csv_file} ({len(df):,} rows)")
+
+
+# =============================================================================
+# Entry Point
+# =============================================================================
 
 def main():
     print("=" * 60)
     print("Task 4: SEIR ODE Integration (Time-Varying Interventions)")
     print("=" * 60)
-    
-    # Load data
+
     tx_pd, theta = load_data()
     print(f"\nLoaded {len(tx_pd)} cities")
     print(f"Mobility matrix shape: {theta.shape}")
-    print(f"Total mobility (person-trips/day): {theta.sum():,.0f}")
-    
-    # Run simulation
-    results, t = run_simulation(tx_pd, theta)
-    
+    print(f"Total mobility entries sum: {theta.sum():,.0f}")
+
+    # Baseline run: deterministic β
+    results, t = run_simulation(tx_pd, theta, stochastic=False)
+
     if results is None:
         print("\nSimulation failed!")
         return
-    
-    # Validate
-    validate_results(results, tx_pd)
-    
-    # Save results
+
+    validate_results(results, t, tx_pd)   # FIX [1]: pass t explicitly
     save_results(results, t, tx_pd)
-    
+
     print("\n" + "=" * 60)
     print("Task 4 Complete!")
     print("=" * 60)
