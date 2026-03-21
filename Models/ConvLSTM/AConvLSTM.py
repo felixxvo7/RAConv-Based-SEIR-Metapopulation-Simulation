@@ -158,6 +158,8 @@ class AConvLSTMLayers(nn.Module):
         self.kernel_size = kernel_size
         self.bias = bias
         self.num_layers = num_layers # Fixed to 2 layers as per Figure 6
+        self.use_attention = use_attention
+        self.output_conv = nn.Conv2d(self.hidden_channels[-1], 1, kernel_size=1)
 
         # Other than first layer, input channels = hidden channels of previous layer
         cell_list = []
@@ -167,7 +169,8 @@ class AConvLSTMLayers(nn.Module):
             cell_list.append(AConvLSTMCell(input_channels=cur_input_channels,
                                           hidden_channels=self.hidden_channels[i],
                                           kernel_size=self.kernel_size[i],
-                                          bias=self.bias))
+                                          bias=self.bias,
+                                          use_attention=self.use_attention))
 
         self.cell_list = nn.ModuleList(cell_list)
 
@@ -183,7 +186,6 @@ class AConvLSTMLayers(nn.Module):
         """
         b, _, _, h, w = input_tensor.size()
 
-        # Implement stateful ConvLSTM
         hidden_state = []
         for i in range(self.num_layers):
             hidden_state.append(self.cell_list[i].init_hidden(b, (h, w)))
@@ -214,39 +216,54 @@ class AConvLSTMLayers(nn.Module):
 
         return layer_output_list, last_state_list
 
+    def predict_future(self, last_state_list, Q, first_input):
+        """
+        Generate Q future steps using autoregressive roll-forward.
 
-# Simple test
-import torch.optim as optim
+        Parameters
+        ----------
+        last_state_list: list of (h, c) for each layer
+        Q: number of future steps
+        first_input: (B, C, H, W) → usually last frame of input
 
-def main():
-    # Train 2 layer ConvLSTM (first: 64 -> 256, second: 256 -> 64) on random data to predict last frame from previous frames
-    batch_size = 1
-    seq_len = 10
-    input_channels = 64
-    hidden_channels = 256
-    height, width = 16, 16
-    epochs = 10  # keep small for demo
-    lr = 1e-3
+        Returns
+        -------
+        predictions: (B, Q, 1, H, W)
+        """
 
-    model = AConvLSTMLayers(input_channels, [hidden_channels, input_channels], [3, 3], 2, True)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.MSELoss()
+        cur_input = first_input
+        predictions = []
 
-    x = torch.rand(batch_size, seq_len, input_channels, height, width)
-    for epoch in range(epochs):
+        # Copy states (important to avoid modifying original)
+        hidden_states = [(h.clone(), c.clone()) for (h, c) in last_state_list]
 
-        # predict last frame
-        target = x[:, -1]
+        for _ in range(Q):
+            new_hidden_states = []
 
-        pred = model(x)[0][-1]
+            x = cur_input  # input to first layer
 
-        loss = criterion(pred, target)
+            # pass through stacked ConvLSTM layers
+            for layer_idx in range(self.num_layers):
+                h, c = hidden_states[layer_idx]
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+                h, c = self.cell_list[layer_idx](
+                    X=x,
+                    H_prev=h,
+                    C_prev=c
+                )
 
-        print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+                new_hidden_states.append((h, c))
+                x = h  # output becomes next layer input
 
-if __name__ == "__main__":
-    main()
+            # Project to prediction (256 → 1)
+            pred = self.output_conv(x)
+
+            predictions.append(pred)
+
+            # autoregressive: use prediction as next input
+            cur_input = pred
+
+            hidden_states = new_hidden_states
+
+        predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
+        return predictions
