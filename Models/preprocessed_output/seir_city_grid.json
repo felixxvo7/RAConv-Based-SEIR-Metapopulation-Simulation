@@ -1,0 +1,1026 @@
+{
+  "Houston": [
+    0,
+    0
+  ],
+  "Dallas": [
+    0,
+    1
+  ],
+  "San Antonio": [
+    0,
+    2
+  ],
+  "Austin": [
+    0,
+    3
+  ],
+  "Fort Worth": [
+    0,
+    4
+  ],
+  "El Paso": [
+    0,
+    5
+  ],
+  "McAllen": [
+    0,
+    6
+  ],
+  "Denton": [
+    0,
+    7
+  ],
+  "Arlington": [
+    0,
+    8
+  ],
+  "Corpus Christi": [
+    0,
+    9
+  ],
+  "Plano": [
+    0,
+    10
+  ],
+  "Lubbock": [
+    0,
+    11
+  ],
+  "Killeen": [
+    0,
+    12
+  ],
+  "Laredo": [
+    0,
+    13
+  ],
+  "Irving": [
+    0,
+    14
+  ],
+  "Garland": [
+    0,
+    15
+  ],
+  "Brownsville": [
+    1,
+    0
+  ],
+  "College Station": [
+    1,
+    1
+  ],
+  "Frisco": [
+    1,
+    2
+  ],
+  "Amarillo": [
+    1,
+    3
+  ],
+  "Galveston": [
+    1,
+    4
+  ],
+  "McKinney": [
+    1,
+    5
+  ],
+  "Grand Prairie": [
+    1,
+    6
+  ],
+  "Waco": [
+    1,
+    7
+  ],
+  "Odessa": [
+    1,
+    8
+  ],
+  "Pasadena": [
+    1,
+    9
+  ],
+  "Mesquite": [
+    1,
+    10
+  ],
+  "Beaumont": [
+    1,
+    11
+  ],
+  "Midland": [
+    1,
+    12
+  ],
+  "Carrollton": [
+    1,
+    13
+  ],
+  "Tyler": [
+    1,
+    14
+  ],
+  "Lewisville": [
+    1,
+    15
+  ],
+  "Abilene": [
+    2,
+    0
+  ],
+  "Pearland": [
+    2,
+    1
+  ],
+  "Round Rock": [
+    2,
+    2
+  ],
+  "Temple": [
+    2,
+    3
+  ],
+  "Richardson": [
+    2,
+    4
+  ],
+  "The Woodlands": [
+    2,
+    5
+  ],
+  "Harlingen": [
+    2,
+    6
+  ],
+  "League City": [
+    2,
+    7
+  ],
+  "Port Arthur": [
+    2,
+    8
+  ],
+  "Longview": [
+    2,
+    9
+  ],
+  "Sugar Land": [
+    2,
+    10
+  ],
+  "Allen": [
+    2,
+    11
+  ],
+  "Edinburg": [
+    2,
+    12
+  ],
+  "Wichita Falls": [
+    2,
+    13
+  ],
+  "San Angelo": [
+    2,
+    14
+  ],
+  "New Braunfels": [
+    2,
+    15
+  ],
+  "Conroe": [
+    3,
+    0
+  ],
+  "Atascocita": [
+    3,
+    1
+  ],
+  "Mission": [
+    3,
+    2
+  ],
+  "Bryan": [
+    3,
+    3
+  ],
+  "Baytown": [
+    3,
+    4
+  ],
+  "Pharr": [
+    3,
+    5
+  ],
+  "Georgetown": [
+    3,
+    6
+  ],
+  "Texarkana": [
+    3,
+    7
+  ],
+  "Flower Mound": [
+    3,
+    8
+  ],
+  "Cedar Park": [
+    3,
+    9
+  ],
+  "Mansfield": [
+    3,
+    10
+  ],
+  "Missouri City": [
+    3,
+    11
+  ],
+  "San Marcos": [
+    3,
+    12
+  ],
+  "Sherman": [
+    3,
+    13
+  ],
+  "North Richland Hills": [
+    3,
+    14
+  ],
+  "Leander": [
+    3,
+    15
+  ],
+  "Spring": [
+    4,
+    0
+  ],
+  "Victoria": [
+    4,
+    1
+  ],
+  "Pflugerville": [
+    4,
+    2
+  ],
+  "Rowlett": [
+    4,
+    3
+  ],
+  "Euless": [
+    4,
+    4
+  ],
+  "Wylie": [
+    4,
+    5
+  ],
+  "DeSoto": [
+    4,
+    6
+  ],
+  "Texas City": [
+    4,
+    7
+  ],
+  "Kyle": [
+    4,
+    8
+  ],
+  "Little Elm": [
+    4,
+    9
+  ],
+  "Burleson": [
+    4,
+    10
+  ],
+  "Grapevine": [
+    4,
+    11
+  ],
+  "Rockwall": [
+    4,
+    12
+  ],
+  "Bedford": [
+    4,
+    13
+  ],
+  "Cedar Hill": [
+    4,
+    14
+  ],
+  "Huntsville": [
+    4,
+    15
+  ],
+  "Haltom City": [
+    5,
+    0
+  ],
+  "Keller": [
+    5,
+    1
+  ],
+  "The Colony": [
+    5,
+    2
+  ],
+  "Waxahachie": [
+    5,
+    3
+  ],
+  "Channelview": [
+    5,
+    4
+  ],
+  "Schertz": [
+    5,
+    5
+  ],
+  "Coppell": [
+    5,
+    6
+  ],
+  "Weslaco": [
+    5,
+    7
+  ],
+  "Friendswood": [
+    5,
+    8
+  ],
+  "Lancaster": [
+    5,
+    9
+  ],
+  "Hurst": [
+    5,
+    10
+  ],
+  "Duncanville": [
+    5,
+    11
+  ],
+  "Rosenberg": [
+    5,
+    12
+  ],
+  "Mission Bend": [
+    5,
+    13
+  ],
+  "Midlothian": [
+    5,
+    14
+  ],
+  "Copperas Cove": [
+    5,
+    15
+  ],
+  "Farmers Branch": [
+    6,
+    0
+  ],
+  "Socorro": [
+    6,
+    1
+  ],
+  "La Porte": [
+    6,
+    2
+  ],
+  "San Juan": [
+    6,
+    3
+  ],
+  "Timberwood Park": [
+    6,
+    4
+  ],
+  "Del Rio": [
+    6,
+    5
+  ],
+  "Prosper": [
+    6,
+    6
+  ],
+  "Lufkin": [
+    6,
+    7
+  ],
+  "Weatherford": [
+    6,
+    8
+  ],
+  "Cibolo": [
+    6,
+    9
+  ],
+  "Deer Park": [
+    6,
+    10
+  ],
+  "Harker Heights": [
+    6,
+    11
+  ],
+  "Cleburne": [
+    6,
+    12
+  ],
+  "Canyon Lake": [
+    6,
+    13
+  ],
+  "Hutto": [
+    6,
+    14
+  ],
+  "Nacogdoches": [
+    6,
+    15
+  ],
+  "West Odessa": [
+    7,
+    0
+  ],
+  "Seguin": [
+    7,
+    1
+  ],
+  "Southlake": [
+    7,
+    2
+  ],
+  "Greenville": [
+    7,
+    3
+  ],
+  "Sachse": [
+    7,
+    4
+  ],
+  "Converse": [
+    7,
+    5
+  ],
+  "Forney": [
+    7,
+    6
+  ],
+  "Eagle Pass": [
+    7,
+    7
+  ],
+  "Lake Jackson": [
+    7,
+    8
+  ],
+  "Alvin": [
+    7,
+    9
+  ],
+  "Balch Springs": [
+    7,
+    10
+  ],
+  "Celina": [
+    7,
+    11
+  ],
+  "Fulshear": [
+    7,
+    12
+  ],
+  "Colleyville": [
+    7,
+    13
+  ],
+  "Fort Hood": [
+    7,
+    14
+  ],
+  "Denison": [
+    7,
+    15
+  ],
+  "Corsicana": [
+    8,
+    0
+  ],
+  "University Park": [
+    8,
+    1
+  ],
+  "Kingsville": [
+    8,
+    2
+  ],
+  "Pecan Grove": [
+    8,
+    3
+  ],
+  "Big Spring": [
+    8,
+    4
+  ],
+  "Paris": [
+    8,
+    5
+  ],
+  "San Benito": [
+    8,
+    6
+  ],
+  "Cloverleaf": [
+    8,
+    7
+  ],
+  "Kerrville": [
+    8,
+    8
+  ],
+  "Saginaw": [
+    8,
+    9
+  ],
+  "Benbrook": [
+    8,
+    10
+  ],
+  "Fresno": [
+    8,
+    11
+  ],
+  "Katy": [
+    8,
+    12
+  ],
+  "Belton": [
+    8,
+    13
+  ],
+  "Marshall": [
+    8,
+    14
+  ],
+  "Watauga": [
+    8,
+    15
+  ],
+  "Horizon City": [
+    9,
+    0
+  ],
+  "Corinth": [
+    9,
+    1
+  ],
+  "Dickinson": [
+    9,
+    2
+  ],
+  "Ennis": [
+    9,
+    3
+  ],
+  "Stephenville": [
+    9,
+    4
+  ],
+  "Murphy": [
+    9,
+    5
+  ],
+  "Anna": [
+    9,
+    6
+  ],
+  "Princeton": [
+    9,
+    7
+  ],
+  "Brushy Creek": [
+    9,
+    8
+  ],
+  "Fate": [
+    9,
+    9
+  ],
+  "Portland": [
+    9,
+    10
+  ],
+  "Alamo": [
+    9,
+    11
+  ],
+  "Plainview": [
+    9,
+    12
+  ],
+  "Universal City": [
+    9,
+    13
+  ],
+  "Angleton": [
+    9,
+    14
+  ],
+  "Boerne": [
+    9,
+    15
+  ],
+  "Alton": [
+    10,
+    0
+  ],
+  "Orange": [
+    10,
+    1
+  ],
+  "Cinco Ranch": [
+    10,
+    2
+  ],
+  "Lakeway": [
+    10,
+    3
+  ],
+  "Terrell": [
+    10,
+    4
+  ],
+  "Crowley": [
+    10,
+    5
+  ],
+  "Seagoville": [
+    10,
+    6
+  ],
+  "Palestine": [
+    10,
+    7
+  ],
+  "La Marque": [
+    10,
+    8
+  ],
+  "Brownwood": [
+    10,
+    9
+  ],
+  "Steiner Ranch": [
+    10,
+    10
+  ],
+  "Nederland": [
+    10,
+    11
+  ],
+  "White Settlement": [
+    10,
+    12
+  ],
+  "Brenham": [
+    10,
+    13
+  ],
+  "Bay City": [
+    10,
+    14
+  ],
+  "Alice": [
+    10,
+    15
+  ],
+  "Gainesville": [
+    11,
+    0
+  ],
+  "Melissa": [
+    11,
+    1
+  ],
+  "Royse City": [
+    11,
+    2
+  ],
+  "Stafford": [
+    11,
+    3
+  ],
+  "Glenn Heights": [
+    11,
+    4
+  ],
+  "Addison": [
+    11,
+    5
+  ],
+  "Bellaire": [
+    11,
+    6
+  ],
+  "Groves": [
+    11,
+    7
+  ],
+  "Manor": [
+    11,
+    8
+  ],
+  "Donna": [
+    11,
+    9
+  ],
+  "Taylor": [
+    11,
+    10
+  ],
+  "Pampa": [
+    11,
+    11
+  ],
+  "Humble": [
+    11,
+    12
+  ],
+  "Mercedes": [
+    11,
+    13
+  ],
+  "Hewitt": [
+    11,
+    14
+  ],
+  "Sulphur Springs": [
+    11,
+    15
+  ],
+  "Mount Pleasant": [
+    12,
+    0
+  ],
+  "Gatesville": [
+    12,
+    1
+  ],
+  "South Houston": [
+    12,
+    2
+  ],
+  "Highland Village": [
+    12,
+    3
+  ],
+  "Red Oak": [
+    12,
+    4
+  ],
+  "Rendon": [
+    12,
+    5
+  ],
+  "Live Oak": [
+    12,
+    6
+  ],
+  "Palmview": [
+    12,
+    7
+  ],
+  "Buda": [
+    12,
+    8
+  ],
+  "Aldine": [
+    12,
+    9
+  ],
+  "Canyon": [
+    12,
+    10
+  ],
+  "Uvalde": [
+    12,
+    11
+  ],
+  "Rio Grande City": [
+    12,
+    12
+  ],
+  "Mineral Wells": [
+    12,
+    13
+  ],
+  "West University Place": [
+    12,
+    14
+  ],
+  "Hereford": [
+    12,
+    15
+  ],
+  "Lockhart": [
+    13,
+    0
+  ],
+  "Dumas": [
+    13,
+    1
+  ],
+  "Hidalgo": [
+    13,
+    2
+  ],
+  "Jacksonville": [
+    13,
+    3
+  ],
+  "Wells Branch": [
+    13,
+    4
+  ],
+  "Forest Hill": [
+    13,
+    5
+  ],
+  "Lumberton": [
+    13,
+    6
+  ],
+  "Azle": [
+    13,
+    7
+  ],
+  "Port Neches": [
+    13,
+    8
+  ],
+  "Seabrook": [
+    13,
+    9
+  ],
+  "Beeville": [
+    13,
+    10
+  ],
+  "Trophy Club": [
+    13,
+    11
+  ],
+  "Kilgore": [
+    13,
+    12
+  ],
+  "Andrews": [
+    13,
+    13
+  ],
+  "Henderson": [
+    13,
+    14
+  ],
+  "Tomball": [
+    13,
+    15
+  ],
+  "Athens": [
+    14,
+    0
+  ],
+  "Manvel": [
+    14,
+    1
+  ],
+  "Santa Fe": [
+    14,
+    2
+  ],
+  "Robinson": [
+    14,
+    3
+  ],
+  "Lantana": [
+    14,
+    4
+  ],
+  "Levelland": [
+    14,
+    5
+  ],
+  "Borger": [
+    14,
+    6
+  ],
+  "Webster": [
+    14,
+    7
+  ],
+  "El Campo": [
+    14,
+    8
+  ],
+  "Richmond": [
+    14,
+    9
+  ],
+  "Hornsby Bend": [
+    14,
+    10
+  ],
+  "Fort Bliss": [
+    14,
+    11
+  ],
+  "Granbury": [
+    14,
+    12
+  ],
+  "Roma": [
+    14,
+    13
+  ],
+  "Four Corners": [
+    14,
+    14
+  ],
+  "Leon Valley": [
+    14,
+    15
+  ],
+  "Port Lavaca": [
+    15,
+    0
+  ],
+  "La Homa": [
+    15,
+    1
+  ],
+  "Snyder": [
+    15,
+    2
+  ],
+  "Selma": [
+    15,
+    3
+  ],
+  "Fredericksburg": [
+    15,
+    4
+  ],
+  "Iowa Colony": [
+    15,
+    5
+  ],
+  "Heartland": [
+    15,
+    6
+  ],
+  "Burkburnett": [
+    15,
+    7
+  ],
+  "Elgin": [
+    15,
+    8
+  ],
+  "Pleasanton": [
+    15,
+    9
+  ],
+  "Scenic Oaks": [
+    15,
+    10
+  ],
+  "Clute": [
+    15,
+    11
+  ],
+  "Freeport": [
+    15,
+    12
+  ],
+  "Fair Oaks Ranch": [
+    15,
+    13
+  ],
+  "Bonham": [
+    15,
+    14
+  ],
+  "Fairview": [
+    15,
+    15
+  ]
+}

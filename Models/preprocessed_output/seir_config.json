@@ -1,0 +1,13 @@
+{
+  "seq_len": 8,
+  "pred_len": 4,
+  "train_days": 170,
+  "norm_method": "minmax",
+  "target_column": "I",
+  "val_ratio": 0.15,
+  "stride": 1,
+  "single_step": false,
+  "grid_height": 16,
+  "grid_width": 16,
+  "num_cities": 256
+}

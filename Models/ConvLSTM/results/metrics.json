@@ -1,0 +1,20 @@
+{
+  "best_epoch": 9,
+  "test_mse": 0.0005447344738058746,
+  "test_rmse": 0.023339547420759353,
+  "test_mae": 0.003697227453812957,
+  "best_val_loss": 1.668627191975247e-05,
+  "config": {
+    "input_channels": 1,
+    "hidden_channels": [
+      256,
+      256
+    ],
+    "kernel_sizes": [
+      3,
+      3
+    ],
+    "num_layers": 2,
+    "pred_len": 4
+  }
+}
