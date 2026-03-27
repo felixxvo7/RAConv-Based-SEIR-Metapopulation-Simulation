@@ -45,14 +45,14 @@ DEFAULT_NPZ = str(
 
 CFG = dict(
     # training
-    epochs=50,
+    epochs=150,
     batch_size=16,
     lr=1e-3,
     weight_decay=1e-5,
     patience=8,
 
     # model
-    hidden_channels=(64, 64),
+    hidden_channels=(256, 256, 256),
     kernel_sizes=(3, 3),
     num_layers=2,
 
@@ -150,7 +150,7 @@ def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG["lr"],
                                 weight_decay=CFG["weight_decay"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=3, verbose=False
+        optimizer, mode="min", factor=0.5, patience=3
     )
     criterion = nn.MSELoss()
 
