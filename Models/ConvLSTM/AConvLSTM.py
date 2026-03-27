@@ -73,14 +73,14 @@ class AConvLSTMCell(nn.Module):
     # Shared helper to turn a feature map into attention gate via exp / max
     def _attention_gate(self, Z):
         """
-        Z: [B, H, Hs, Ws]
+        Z: [B, C, H, W]
         Returns attention tensor A in (0, 1] by channel-wise max-normalization.
+        Numerically stable: subtract spatial max before exp to prevent overflow.
         """
-        Z_exp = torch.exp(Z)                           # NEW: exponentiate scores
-        max_per_channel = Z_exp.amax(dim=(-2, -1), keepdim=True)  # NEW: max over spatial dims per channel
-        max_per_channel = torch.clamp(max_per_channel, min=1e-6)  # NEW: avoid division by zero
-        A = Z_exp / max_per_channel                   # NEW: normalize so max element in each channel is 1
-        return A
+        Z_max = Z.amax(dim=(-2, -1), keepdim=True)
+        Z_exp = torch.exp(Z - Z_max)
+        max_per_channel = Z_exp.amax(dim=(-2, -1), keepdim=True).clamp(min=1e-6)
+        return Z_exp / max_per_channel
 
     def forward(self, X, H_prev, C_prev):
         # ======================= INPUT GATE =======================
