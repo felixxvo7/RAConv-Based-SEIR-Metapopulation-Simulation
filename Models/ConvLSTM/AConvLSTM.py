@@ -173,6 +173,8 @@ class AConvLSTMLayers(nn.Module):
                                           use_attention=self.use_attention))
 
         self.cell_list = nn.ModuleList(cell_list)
+        self.output_conv = nn.Conv2d(hidden_channels[-1], 1, kernel_size=1)
+        self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
     def forward(self, input_tensor):
         """
@@ -216,58 +218,41 @@ class AConvLSTMLayers(nn.Module):
 
         return layer_output_list, last_state_list
 
-    def predict_future(self, last_state_list, Q, first_input):
+    def predict_future(self, last_state_list, Q, first_input_feature):
         """
-        Generate Q future steps using autoregressive roll-forward.
-
-        Parameters
-        ----------
-        last_state_list: list of (h, c) for each layer
-        Q: number of future steps
-        first_input: (B, C, H, W) → usually last frame of input
-
-        Returns
-        -------
-        predictions: (B, Q, 1, H, W)
+        Args:
+            first_input_feature: The 128-ch feature map of the last historical frame
         """
-
-        cur_input = first_input
+        cur_input = first_input_feature 
         predictions = []
-
-        # Copy states (important to avoid modifying original)
         hidden_states = [(h.clone(), c.clone()) for (h, c) in last_state_list]
 
-        for _ in range(Q):
+        for t in range(Q):
+            x = cur_input # This is 128 channels
             new_hidden_states = []
 
-            x = cur_input  # input to first layer
-
-            # pass through stacked ConvLSTM layers
             for layer_idx in range(self.num_layers):
                 h, c = hidden_states[layer_idx]
-
-                h, c = self.cell_list[layer_idx](
-                    X=x,
-                    H_prev=h,
-                    C_prev=c
-                )
-
+                h, c = self.cell_list[layer_idx](X=x, H_prev=h, C_prev=c)
                 new_hidden_states.append((h, c))
-                x = h  # output becomes next layer input
+                x = h 
 
-            # Project to prediction (256 → 1)
-            pred = self.output_conv(x)
-
+            # 1. Produce the 1-channel prediction
+            pred = self.output_conv(x) # x is 256-ch, pred is 1-ch
             predictions.append(pred)
 
-            # autoregressive: use prediction as next input
-            cur_input = pred
+            # 2. FEEDBACK BRIDGE: Prepare input for next step (t+1)
+            # Up-project 1-channel 'pred' to 128-channels for the next loop
+            cur_input = self.input_projection_feedback(pred)
 
             hidden_states = new_hidden_states
 
-        predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
-        return predictions
+        return torch.stack(predictions, dim=1)
 
+
+# ---------------------------------------------------------------------------
+# AConvLSTMModel  — full pipeline: Conv3D → AConvLSTM×2 → output
+# ---------------------------------------------------------------------------
 
 class AConvLSTMModel(nn.Module):
     """
