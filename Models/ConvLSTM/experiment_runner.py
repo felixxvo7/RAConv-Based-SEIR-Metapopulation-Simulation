@@ -340,11 +340,13 @@ def run_experiment(p: int, device: torch.device):
 
     # ── data ──────────────────────────────────────────────────────────────
     data = load_npz(str(npz_path))
-    Q = data["Y_train"].shape[1]
+    Q = data["Y_train"].shape[1]   # always 7 (fixed pred_len)
+    P_seq = data["X_train"].shape[1]  # lookback window = P
+    print(f"  Lookback window  P = {P_seq}")
+    print(f"  Forecast horizon Q = {Q}")
     print(f"  X_train {data['X_train'].shape}  Y_train {data['Y_train'].shape}")
     print(f"  X_val   {data['X_val'].shape}    Y_val   {data['Y_val'].shape}")
     print(f"  X_test  {data['X_test'].shape}   Y_test  {data['Y_test'].shape}")
-    print(f"  Forecast horizon Q = {Q}")
 
     loaders = build_loaders(data, CFG["batch_size"])
 
@@ -424,7 +426,7 @@ def main():
     parser = argparse.ArgumentParser(description="AConvLSTM Experiment Runner")
     parser.add_argument("--p", type=int, nargs="+", default=[7, 10, 14],
                         choices=[7, 10, 14],
-                        help="Forecast horizon(s) to train (default: 7 10 14)")
+                        help="Lookback window(s) P to train (default: 7 10 14); forecast horizon Q is fixed at 7")
     parser.add_argument("--epochs",     type=int,   default=CFG["epochs"])
     parser.add_argument("--batch_size", type=int,   default=CFG["batch_size"])
     parser.add_argument("--lr",         type=float, default=CFG["lr"])

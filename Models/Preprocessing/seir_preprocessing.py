@@ -210,18 +210,19 @@ def load_preprocessed(path: str) -> Dict[str, np.ndarray]:
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
 
-    pred_lens = [7, 10, 14]          # P values to generate
+    seq_lens = [7, 10, 14]          # P values: lookback window length
+    Q = 7                           # fixed forecast horizon
 
-    for P in pred_lens:
+    for P in seq_lens:
         print(f"\n{'=' * 60}")
-        print(f"  Running preprocessing with P (pred_len) = {P}")
+        print(f"  Running preprocessing with P (seq_len) = {P}, Q (pred_len) = {Q}")
         print(f"{'=' * 60}")
         preprocess(
             seir_path=os.path.join(base, 'seir_baseline_300days_256cities.csv'),
             geo_path=os.path.join(base, 'tx_pd.csv'),
             save_path=os.path.join(base, 'preprocessed_output', f'seir_preprocessed_P{P}.npz'),
-            seq_len=14,
-            pred_len=P,
+            seq_len=P,
+            pred_len=Q,
             train_days=200,
             val_ratio=0.15,
             stride=1,
