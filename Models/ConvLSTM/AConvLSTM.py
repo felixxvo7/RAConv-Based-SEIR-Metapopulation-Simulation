@@ -242,6 +242,8 @@ class AConvLSTMModel(nn.Module):
 
         # ── Output projection ────────────────────────────────────────────
         self.output_conv = nn.Conv2d(hidden_channels[-1], 1, kernel_size=1)
+        
+        self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
     # ------------------------------------------------------------------
     def forward(self, x):
@@ -289,9 +291,12 @@ class AConvLSTMModel(nn.Module):
                 new_states.append((h, c))
                 x = h
 
-            pred = self.output_conv(x)                    # (B, 1, H, W)
+            # 1. Produce the 1-channel prediction
+            pred = self.output_conv(x) 
             predictions.append(pred)
-            cur_input = self.frame_proj(pred)             # project for next step
-            hidden_states = new_states
+
+            # 2. FEEDBACK BRIDGE: Prepare input for next step (t+1)
+            cur_input = self.input_projection_feedback(pred)
+            hidden_states = new_hidden_states
 
         return torch.stack(predictions, dim=1)            # (B, Q, 1, H, W)
