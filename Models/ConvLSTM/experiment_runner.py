@@ -339,9 +339,26 @@ def run_experiment(p: int, device: torch.device):
     print(f"{'#' * 65}")
 
     # ── data ──────────────────────────────────────────────────────────────
+    if not npz_path.exists():
+        raise FileNotFoundError(
+            f"{npz_path} not found. Re-run preprocessing:\n"
+            f"  cd Models/Preprocessing && python seir_preprocessing.py"
+        )
     data = load_npz(str(npz_path))
     Q = data["Y_train"].shape[1]   # always 7 (fixed pred_len)
     P_seq = data["X_train"].shape[1]  # lookback window = P
+
+    assert P_seq == p, (
+        f"DATA MISMATCH: {p_label} expects lookback P={p}, but the NPZ "
+        f"contains X with time dim={P_seq}. "
+        f"Re-run preprocessing:  cd Models/Preprocessing && python seir_preprocessing.py"
+    )
+    assert Q == 7, (
+        f"DATA MISMATCH: expected forecast horizon Q=7, but the NPZ "
+        f"contains Y with time dim={Q}. "
+        f"Re-run preprocessing:  cd Models/Preprocessing && python seir_preprocessing.py"
+    )
+
     print(f"  Lookback window  P = {P_seq}")
     print(f"  Forecast horizon Q = {Q}")
     print(f"  X_train {data['X_train'].shape}  Y_train {data['Y_train'].shape}")
