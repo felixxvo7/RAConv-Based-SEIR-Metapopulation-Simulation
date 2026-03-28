@@ -209,16 +209,23 @@ def load_preprocessed(path: str) -> Dict[str, np.ndarray]:
 
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
-    preprocess(
-        seir_path=os.path.join(base, 'seir_baseline_300days_256cities.csv'),
-        geo_path=os.path.join(base, 'tx_pd.csv'),
-        save_path=os.path.join(base, 'preprocessed_output', 'seir_preprocessed.npz'),
-        seq_len=14,
-        pred_len=7,
-        train_days=200,
-        val_ratio=0.15,
-        stride=1,
-    )
+
+    pred_lens = [7, 10, 14]          # P values to generate
+
+    for P in pred_lens:
+        print(f"\n{'=' * 60}")
+        print(f"  Running preprocessing with P (pred_len) = {P}")
+        print(f"{'=' * 60}")
+        preprocess(
+            seir_path=os.path.join(base, 'seir_baseline_300days_256cities.csv'),
+            geo_path=os.path.join(base, 'tx_pd.csv'),
+            save_path=os.path.join(base, 'preprocessed_output', f'seir_preprocessed_P{P}.npz'),
+            seq_len=14,
+            pred_len=P,
+            train_days=200,
+            val_ratio=0.15,
+            stride=1,
+        )
 
 
 if __name__ == '__main__':

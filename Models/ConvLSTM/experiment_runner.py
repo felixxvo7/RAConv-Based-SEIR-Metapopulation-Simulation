@@ -4,10 +4,13 @@ AConvLSTM Experiment Runner
 End-to-end pipeline: load preprocessed SEIR data, train the AConvLSTM model,
 evaluate on test set, and produce diagnostic plots.
 
+Trains separately for each forecast horizon P (P7, P10, P14 by default).
+Results are saved to results/P<N>/ subdirectories.
+
 Usage:
-    python experiment_runner.py
-    python experiment_runner.py --data path/to/seir_preprocessed.npz
-    python experiment_runner.py --epochs 200 --batch_size 8 --lr 5e-4
+    python experiment_runner.py                          # trains P7, P10, P14
+    python experiment_runner.py --p 7 10                 # trains only P7 and P10
+    python experiment_runner.py --epochs 200 --lr 5e-4
 """
 
 import sys
@@ -29,25 +32,24 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from AConvLSTM import AConvLSTMLayers  # noqa: E402
+from AConvLSTM import AConvLSTMModel  # noqa: E402
+
+NPZ_DIR = SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
-DEFAULT_NPZ = str(
-    SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output" / "seir_preprocessed.npz"
-)
-
 CFG = dict(
-    epochs=150,
+    epochs=100,
     batch_size=16,
     lr=1e-3,
     weight_decay=1e-5,
     patience=15,
     seed=42,
 
+    conv3d_channels= 64,
     hidden_channels=[256, 256],
     kernel_sizes=[3, 3],
     num_layers=2,
@@ -68,7 +70,7 @@ def load_npz(path: str) -> Dict[str, np.ndarray]:
 def _make_loader(X: np.ndarray, Y: np.ndarray,
                  batch_size: int, shuffle: bool) -> DataLoader:
     """
-    X: (N, P, H, W) → (N, P, 1, H, W)
+    X: (N, T, H, W) → (N, T, 1, H, W)
     Y: (N, Q, H, W) → (N, Q, 1, H, W)
     """
     Xt = torch.from_numpy(X).float().unsqueeze(2)
@@ -90,9 +92,10 @@ def build_loaders(data: Dict[str, np.ndarray],
 # MODEL
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def build_model(device: torch.device) -> AConvLSTMLayers:
-    model = AConvLSTMLayers(
-        input_channels=1,
+def build_model(device: torch.device) -> AConvLSTMModel:
+    model = AConvLSTMModel(
+        in_channels=1,
+        conv3d_channels=CFG["conv3d_channels"],
         hidden_channels=CFG["hidden_channels"],
         kernel_size=CFG["kernel_sizes"],
         num_layers=CFG["num_layers"],
@@ -106,7 +109,7 @@ def build_model(device: torch.device) -> AConvLSTMLayers:
 # TRAINING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
+def _run_epoch(model: AConvLSTMModel, loader: DataLoader, Q: int,
                criterion: nn.Module, optimizer=None,
                device: torch.device = torch.device("cpu")) -> float:
     is_train = optimizer is not None
@@ -119,7 +122,7 @@ def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
             xb, yb = xb.to(device), yb.to(device)
 
             _, last_states = model(xb)
-            first_input = xb[:, -1, :, :, :]
+            first_input = xb[:, -1, :, :, :]          # (B, 1, H, W)
             preds = model.predict_future(last_states, Q, first_input)
 
             loss = criterion(preds, yb)
@@ -136,9 +139,9 @@ def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
     return total_loss / max(n, 1)
 
 
-def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
-                Q: int, device: torch.device
-                ) -> Tuple[List[float], List[float], str]:
+def train_model(model: AConvLSTMModel, loaders: Dict[str, DataLoader],
+                Q: int, device: torch.device,
+                ckpt_path: str) -> Tuple[List[float], List[float]]:
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG["lr"],
                                  weight_decay=CFG["weight_decay"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -147,12 +150,10 @@ def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
     criterion = nn.MSELoss()
 
     train_hist: List[float] = []
-    val_hist: List[float] = []
+    val_hist:   List[float] = []
     best_val, wait = float("inf"), 0
 
-    ckpt_dir = Path(CFG["results_dir"])
-    ckpt_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = str(ckpt_dir / "best_aconvlstm.pth")
+    Path(ckpt_path).parent.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(1, CFG["epochs"] + 1):
         t_loss = _run_epoch(model, loaders["train"], Q, criterion,
@@ -178,7 +179,7 @@ def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
                 break
 
     model.load_state_dict(torch.load(ckpt_path, weights_only=True))
-    return train_hist, val_hist, ckpt_path
+    return train_hist, val_hist
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -186,7 +187,7 @@ def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @torch.no_grad()
-def evaluate(model: AConvLSTMLayers, loader: DataLoader,
+def evaluate(model: AConvLSTMModel, loader: DataLoader,
              Q: int, device: torch.device) -> Dict:
     model.eval()
     all_preds, all_targets = [], []
@@ -199,24 +200,23 @@ def evaluate(model: AConvLSTMLayers, loader: DataLoader,
         all_preds.append(preds.cpu())
         all_targets.append(yb.cpu())
 
-    preds = torch.cat(all_preds)
+    preds   = torch.cat(all_preds)
     targets = torch.cat(all_targets)
 
-    mse = ((preds - targets) ** 2).mean().item()
-    mae = (preds - targets).abs().mean().item()
+    mse  = ((preds - targets) ** 2).mean().item()
+    mae  = (preds - targets).abs().mean().item()
     rmse = mse ** 0.5
 
     per_step_mse = ((preds - targets) ** 2).mean(dim=(0, 2, 3, 4)).tolist()
     per_step_mae = (preds - targets).abs().mean(dim=(0, 2, 3, 4)).tolist()
-
-    spatial_mse = ((preds - targets) ** 2).mean(dim=(0, 1, 2)).numpy()
+    spatial_mse  = ((preds - targets) ** 2).mean(dim=(0, 1, 2)).numpy()
 
     return {
         "MSE": mse, "MAE": mae, "RMSE": rmse,
         "per_step_mse": per_step_mse,
         "per_step_mae": per_step_mae,
-        "spatial_mse": spatial_mse,
-        "preds": preds,
+        "spatial_mse":  spatial_mse,
+        "preds":   preds,
         "targets": targets,
     }
 
@@ -225,15 +225,14 @@ def evaluate(model: AConvLSTMLayers, loader: DataLoader,
 # PLOTTING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def plot_loss_curves(train_hist: List[float], val_hist: List[float],
-                     save_path: str):
+def plot_loss_curves(train_hist, val_hist, save_path, p_label):
     fig, ax = plt.subplots(figsize=(10, 5))
     epochs = range(1, len(train_hist) + 1)
     ax.plot(epochs, train_hist, label="Train")
-    ax.plot(epochs, val_hist, label="Validation")
+    ax.plot(epochs, val_hist,   label="Validation")
     ax.set_xlabel("Epoch")
     ax.set_ylabel("MSE Loss")
-    ax.set_title("AConvLSTM Training & Validation Loss")
+    ax.set_title(f"AConvLSTM Training & Validation Loss  [{p_label}]")
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -242,9 +241,7 @@ def plot_loss_curves(train_hist: List[float], val_hist: List[float],
     print(f"  Saved loss curves -> {save_path}")
 
 
-def plot_per_step_metrics(per_step_mse: List[float],
-                          per_step_mae: List[float],
-                          save_path: str):
+def plot_per_step_metrics(per_step_mse, per_step_mae, save_path, p_label):
     Q = len(per_step_mse)
     steps = range(1, Q + 1)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -252,14 +249,14 @@ def plot_per_step_metrics(per_step_mse: List[float],
     ax1.bar(steps, per_step_mse, color="steelblue", alpha=0.8)
     ax1.set_xlabel("Forecast Step")
     ax1.set_ylabel("MSE")
-    ax1.set_title("MSE by Forecast Step")
+    ax1.set_title(f"MSE by Forecast Step  [{p_label}]")
     ax1.set_xticks(list(steps))
     ax1.grid(True, alpha=0.3, axis="y")
 
     ax2.bar(steps, per_step_mae, color="coral", alpha=0.8)
     ax2.set_xlabel("Forecast Step")
     ax2.set_ylabel("MAE")
-    ax2.set_title("MAE by Forecast Step")
+    ax2.set_title(f"MAE by Forecast Step  [{p_label}]")
     ax2.set_xticks(list(steps))
     ax2.grid(True, alpha=0.3, axis="y")
 
@@ -269,10 +266,10 @@ def plot_per_step_metrics(per_step_mse: List[float],
     print(f"  Saved per-step metrics -> {save_path}")
 
 
-def plot_spatial_error(spatial_mse: np.ndarray, save_path: str):
+def plot_spatial_error(spatial_mse, save_path, p_label):
     fig, ax = plt.subplots(figsize=(7, 6))
     im = ax.imshow(spatial_mse, cmap="YlOrRd", interpolation="nearest")
-    ax.set_title("Spatial MSE (averaged over samples & time steps)")
+    ax.set_title(f"Spatial MSE  [{p_label}]")
     ax.set_xlabel("Grid Column")
     ax.set_ylabel("Grid Row")
     plt.colorbar(im, ax=ax, label="MSE")
@@ -282,49 +279,41 @@ def plot_spatial_error(spatial_mse: np.ndarray, save_path: str):
     print(f"  Saved spatial error map -> {save_path}")
 
 
-def plot_predictions(preds: torch.Tensor, targets: torch.Tensor,
-                     sample_indices: List[int],
-                     cells: List[Tuple[int, int]],
-                     save_path: str):
+def plot_predictions(preds, targets, sample_indices, cells, save_path, p_label):
+    Q = preds.shape[1]
+    steps = range(1, Q + 1)
     n_samples = len(sample_indices)
-    n_cells = len(cells)
+    n_cells   = len(cells)
     fig, axes = plt.subplots(n_samples, n_cells,
                              figsize=(6 * n_cells, 4 * n_samples),
                              squeeze=False)
-
-    Q = preds.shape[1]
-    steps = range(1, Q + 1)
-
     for i, idx in enumerate(sample_indices):
         for j, (r, c) in enumerate(cells):
             ax = axes[i][j]
-            pred_vals = preds[idx, :, 0, r, c].numpy()
-            true_vals = targets[idx, :, 0, r, c].numpy()
-            ax.plot(steps, true_vals, "k-", marker="s", linewidth=2,
-                    label="Actual")
-            ax.plot(steps, pred_vals, "b-", marker="o", label="Predicted")
+            ax.plot(steps, targets[idx, :, 0, r, c].numpy(),
+                    "k-", marker="s", linewidth=2, label="Actual")
+            ax.plot(steps, preds[idx, :, 0, r, c].numpy(),
+                    "b-", marker="o", label="Predicted")
             ax.set_xlabel("Forecast Step")
             ax.set_ylabel("Normalised I")
-            ax.set_title(f"Sample {idx}, Cell ({r},{c})")
+            ax.set_title(f"[{p_label}] Sample {idx}, Cell ({r},{c})")
             ax.legend(fontsize=8)
             ax.grid(True, alpha=0.3)
-
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  Saved prediction plots -> {save_path}")
 
 
-def _print_metrics(results: Dict):
+def _print_metrics(results: Dict, p_label: str):
     w = 50
-    print("\n" + "=" * w)
+    print(f"\n{'=' * w}  [{p_label}]")
     print(f"{'Metric':<25s} {'Value':>12s}")
     print("-" * w)
     print(f"{'Test MSE':<25s} {results['MSE']:12.6f}")
     print(f"{'Test MAE':<25s} {results['MAE']:12.6f}")
     print(f"{'Test RMSE':<25s} {results['RMSE']:12.6f}")
     print("=" * w)
-
     print("\nPer-step breakdown:")
     print(f"  {'Step':<6s} {'MSE':>10s} {'MAE':>10s}")
     print(f"  {'-'*28}")
@@ -335,38 +324,22 @@ def _print_metrics(results: Dict):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MAIN
+# PER-P EXPERIMENT
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def main():
-    parser = argparse.ArgumentParser(description="AConvLSTM Experiment Runner")
-    parser.add_argument("--data", type=str, default=DEFAULT_NPZ,
-                        help="Path to seir_preprocessed.npz")
-    parser.add_argument("--epochs", type=int, default=CFG["epochs"])
-    parser.add_argument("--batch_size", type=int, default=CFG["batch_size"])
-    parser.add_argument("--lr", type=float, default=CFG["lr"])
-    parser.add_argument("--patience", type=int, default=CFG["patience"])
-    parser.add_argument("--seed", type=int, default=CFG["seed"])
-    parser.add_argument("--cpu", action="store_true",
-                        help="Force CPU even when CUDA is available")
-    args = parser.parse_args()
+def run_experiment(p: int, device: torch.device):
+    p_label  = f"P{p}"
+    npz_path = NPZ_DIR / f"seir_preprocessed_{p_label}.npz"
+    out_dir  = Path(CFG["results_dir"]) / p_label
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = str(out_dir / f"best_aconvlstm_{p_label}.pth")
 
-    CFG["epochs"] = args.epochs
-    CFG["batch_size"] = args.batch_size
-    CFG["lr"] = args.lr
-    CFG["patience"] = args.patience
-
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-
-    device = torch.device(
-        "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
-    )
-    print(f"Device: {device}")
+    print(f"\n{'#' * 65}")
+    print(f"  Experiment: {p_label}   data: {npz_path}")
+    print(f"{'#' * 65}")
 
     # ── data ──────────────────────────────────────────────────────────────
-    print(f"\nLoading data from {args.data}")
-    data = load_npz(args.data)
+    data = load_npz(str(npz_path))
     Q = data["Y_train"].shape[1]
     print(f"  X_train {data['X_train'].shape}  Y_train {data['Y_train'].shape}")
     print(f"  X_val   {data['X_val'].shape}    Y_val   {data['Y_val'].shape}")
@@ -376,40 +349,39 @@ def main():
     loaders = build_loaders(data, CFG["batch_size"])
 
     # ── model ─────────────────────────────────────────────────────────────
-    print("\nBuilding AConvLSTM model ...")
+    print(f"\nBuilding AConvLSTMModel for {p_label} ...")
     model = build_model(device)
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"  Trainable parameters : {total_params:,}")
+    print(f"  Conv3D channels      : {CFG['conv3d_channels']}")
     print(f"  Hidden channels      : {CFG['hidden_channels']}")
     print(f"  Kernel sizes         : {CFG['kernel_sizes']}")
     print(f"  Layers               : {CFG['num_layers']}")
 
     # ── train ─────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print("Training AConvLSTM")
+    print(f"Training AConvLSTMModel  [{p_label}]")
     print("=" * 60)
 
     t0 = time.time()
-    train_hist, val_hist, ckpt_path = train_model(model, loaders, Q, device)
+    train_hist, val_hist = train_model(model, loaders, Q, device, ckpt_path)
     elapsed = time.time() - t0
 
     print(f"\nTraining completed in {elapsed:.1f}s ({elapsed / 60:.1f} min)")
-    print(f"  Epochs run       : {len(train_hist)}")
-    print(f"  Best val loss    : {min(val_hist):.6f}")
-    print(f"  Checkpoint saved : {ckpt_path}")
+    print(f"  Epochs run    : {len(train_hist)}")
+    print(f"  Best val loss : {min(val_hist):.6f}")
+    print(f"  Checkpoint    : {ckpt_path}")
 
     # ── evaluate ──────────────────────────────────────────────────────────
-    print("\nEvaluating on test set ...")
+    print(f"\nEvaluating on test set  [{p_label}] ...")
     results = evaluate(model, loaders["test"], Q, device)
-    _print_metrics(results)
+    _print_metrics(results, p_label)
 
     # ── save metrics ──────────────────────────────────────────────────────
-    out_dir = Path(CFG["results_dir"])
-    out_dir.mkdir(parents=True, exist_ok=True)
-
     metrics = {
-        "MSE": results["MSE"],
-        "MAE": results["MAE"],
+        "P": p,
+        "MSE":  results["MSE"],
+        "MAE":  results["MAE"],
         "RMSE": results["RMSE"],
         "per_step_mse": results["per_step_mse"],
         "per_step_mae": results["per_step_mae"],
@@ -425,22 +397,70 @@ def main():
 
     # ── plots ─────────────────────────────────────────────────────────────
     plot_loss_curves(train_hist, val_hist,
-                     str(out_dir / "loss_curves.png"))
+                     str(out_dir / "loss_curves.png"), p_label)
 
     plot_per_step_metrics(results["per_step_mse"], results["per_step_mae"],
-                          str(out_dir / "per_step_metrics.png"))
+                          str(out_dir / "per_step_metrics.png"), p_label)
 
     plot_spatial_error(results["spatial_mse"],
-                       str(out_dir / "spatial_error.png"))
+                       str(out_dir / "spatial_error.png"), p_label)
 
     n_test = results["preds"].shape[0]
     sample_indices = sorted({0, n_test // 2, n_test - 1})
     cells = [(4, 4), (8, 8), (12, 12)]
     plot_predictions(results["preds"], results["targets"],
                      sample_indices, cells,
-                     str(out_dir / "pred_vs_actual.png"))
+                     str(out_dir / "pred_vs_actual.png"), p_label)
 
-    print(f"\nAll results saved to {out_dir}")
+    print(f"\n  All {p_label} results saved to {out_dir}")
+    return metrics
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def main():
+    parser = argparse.ArgumentParser(description="AConvLSTM Experiment Runner")
+    parser.add_argument("--p", type=int, nargs="+", default=[7, 10, 14],
+                        choices=[7, 10, 14],
+                        help="Forecast horizon(s) to train (default: 7 10 14)")
+    parser.add_argument("--epochs",     type=int,   default=CFG["epochs"])
+    parser.add_argument("--batch_size", type=int,   default=CFG["batch_size"])
+    parser.add_argument("--lr",         type=float, default=CFG["lr"])
+    parser.add_argument("--patience",   type=int,   default=CFG["patience"])
+    parser.add_argument("--conv3d_channels", type=int, default=CFG["conv3d_channels"])
+    parser.add_argument("--seed",       type=int,   default=CFG["seed"])
+    parser.add_argument("--cpu", action="store_true",
+                        help="Force CPU even when CUDA is available")
+    args = parser.parse_args()
+
+    CFG["epochs"]          = args.epochs
+    CFG["batch_size"]      = args.batch_size
+    CFG["lr"]              = args.lr
+    CFG["patience"]        = args.patience
+    CFG["conv3d_channels"] = args.conv3d_channels
+
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
+    device = torch.device(
+        "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    )
+    print(f"Device: {device}")
+
+    all_metrics = {}
+    for p in args.p:
+        all_metrics[f"P{p}"] = run_experiment(p, device)
+
+    # ── summary across all P ──────────────────────────────────────────────
+    print(f"\n{'=' * 65}")
+    print("Summary")
+    print(f"{'P':<6} {'MSE':>12} {'MAE':>12} {'RMSE':>12}")
+    print("-" * 45)
+    for label, m in all_metrics.items():
+        print(f"{label:<6} {m['MSE']:12.6f} {m['MAE']:12.6f} {m['RMSE']:12.6f}")
+    print("=" * 65)
 
 
 if __name__ == "__main__":
