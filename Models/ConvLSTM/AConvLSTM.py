@@ -205,7 +205,7 @@ class AConvLSTMModel(nn.Module):
     use_attention : bool
     """
 
-    def __init__(self, in_channels=1, conv3d_channels=32,
+    def __init__(self, in_channels=1, conv3d_channels=64,
                  hidden_channels=None, kernel_size=None,
                  num_layers=2, bias=True, use_attention=True):
         super().__init__()
@@ -242,8 +242,6 @@ class AConvLSTMModel(nn.Module):
 
         # ── Output projection ────────────────────────────────────────────
         self.output_conv = nn.Conv2d(hidden_channels[-1], 1, kernel_size=1)
-        
-        self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
     # ------------------------------------------------------------------
     def forward(self, x):
@@ -295,8 +293,8 @@ class AConvLSTMModel(nn.Module):
             pred = self.output_conv(x) 
             predictions.append(pred)
 
-            # 2. FEEDBACK BRIDGE: Prepare input for next step (t+1)
-            cur_input = self.input_projection_feedback(pred)
-            hidden_states = new_hidden_states
+            # 2. Project prediction back into feature space for next step
+            cur_input = self.frame_proj(pred)
+            hidden_states = new_states
 
         return torch.stack(predictions, dim=1)            # (B, Q, 1, H, W)
