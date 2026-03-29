@@ -87,12 +87,12 @@ def reshape_to_grid(
     return grid
 
 
-# ── normalisation (min-max, per cell) ────────────────────────────────────────
+# ── normalisation (global min-max, fit on full dataset) ──────────────────────
 
-def minmax_fit(train: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Compute per-cell min/max along the time axis from training data."""
-    mn = train.min(axis=0, keepdims=True)
-    mx = train.max(axis=0, keepdims=True)
+def minmax_fit(grid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute global min/max over the entire grid (all days, all cells)."""
+    mn = grid.min()   # scalar
+    mx = grid.max()   # scalar
     return mn, mx
 
 
@@ -143,7 +143,7 @@ def preprocess(
     seq_len: int = 14,
     pred_len: int = 7,
     train_days: int = 200,
-    val_ratio: float = 0.15,
+    val_ratio: float = 0.20,
     stride: int = 1,
 ) -> str:
     """
@@ -164,19 +164,17 @@ def preprocess(
     grid = reshape_to_grid(seir_df, city_grid)
     print(f"[2/5] Spatial tensor : {grid.shape}")
 
-    # 3  chronological split
-    val_days = int(train_days * val_ratio)
-    train_raw = grid[:train_days - val_days]
-    val_raw   = grid[train_days - val_days:train_days]
-    test_raw  = grid[train_days:]
-    print(f"[3/5] Split : train {len(train_raw)} | val {len(val_raw)} | test {len(test_raw)} days")
+    # 3  global min-max normalisation (fit on full 300-day grid)
+    mn, mx = minmax_fit(grid)
+    grid_norm = minmax_transform(grid, mn, mx)
+    print(f"[3/5] Normalised   : global [{mn:.4f}, {mx:.4f}] → grid [{grid_norm.min():.4f}, {grid_norm.max():.4f}]")
 
-    # 4  min-max normalisation (fit on train only)
-    mn, mx = minmax_fit(train_raw)
-    train_norm = minmax_transform(train_raw, mn, mx)
-    val_norm   = minmax_transform(val_raw, mn, mx)
-    test_norm  = minmax_transform(test_raw, mn, mx)
-    print(f"[4/5] Normalised   : train [{train_norm.min():.4f}, {train_norm.max():.4f}]")
+    # 4  chronological split (on already-normalised data)
+    val_days   = int(train_days * val_ratio)
+    train_norm = grid_norm[:train_days - val_days]
+    val_norm   = grid_norm[train_days - val_days:train_days]
+    test_norm  = grid_norm[train_days:]
+    print(f"[4/5] Split : train {len(train_norm)} | val {len(val_norm)} | test {len(test_norm)} days")
 
     # 5  sliding windows
     X_train, Y_train = create_sequences(train_norm, seq_len, pred_len, stride)
@@ -224,7 +222,7 @@ def main():
             seq_len=P,
             pred_len=Q,
             train_days=200,
-            val_ratio=0.15,
+            val_ratio=0.20,
             stride=1,
         )
 

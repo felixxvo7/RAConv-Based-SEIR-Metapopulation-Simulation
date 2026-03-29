@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from AConvLSTM import AConvLSTMModel  # noqa: E402
+from AConvLSTM import AConvLSTMLayers  # noqa: E402
 
 NPZ_DIR = SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output"
 
@@ -45,14 +45,13 @@ CFG = dict(
     epochs=100,
     batch_size=16,
     lr=1e-3,
-    weight_decay=1e-5,
-    patience=15,
+    weight_decay=1e-4,
     seed=42,
 
-    conv3d_channels= 64,
-    hidden_channels=[256, 256],
+    hidden_channels=[128, 128],
     kernel_sizes=[3, 3],
     num_layers=2,
+    dropout=0.2,
 
     results_dir=str(SCRIPT_DIR / "results"),
 )
@@ -92,15 +91,15 @@ def build_loaders(data: Dict[str, np.ndarray],
 # MODEL
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def build_model(device: torch.device) -> AConvLSTMModel:
-    model = AConvLSTMModel(
-        in_channels=1,
-        conv3d_channels=CFG["conv3d_channels"],
+def build_model(device: torch.device) -> AConvLSTMLayers:
+    model = AConvLSTMLayers(
+        input_channels=1,
         hidden_channels=CFG["hidden_channels"],
         kernel_size=CFG["kernel_sizes"],
         num_layers=CFG["num_layers"],
         bias=True,
         use_attention=True,
+        dropout=CFG["dropout"],
     )
     return model.to(device)
 
@@ -109,7 +108,7 @@ def build_model(device: torch.device) -> AConvLSTMModel:
 # TRAINING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _run_epoch(model: AConvLSTMModel, loader: DataLoader, Q: int,
+def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
                criterion: nn.Module, optimizer=None,
                device: torch.device = torch.device("cpu")) -> float:
     is_train = optimizer is not None
@@ -139,7 +138,7 @@ def _run_epoch(model: AConvLSTMModel, loader: DataLoader, Q: int,
     return total_loss / max(n, 1)
 
 
-def train_model(model: AConvLSTMModel, loaders: Dict[str, DataLoader],
+def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
                 Q: int, device: torch.device,
                 ckpt_path: str) -> Tuple[List[float], List[float]]:
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG["lr"],
@@ -151,7 +150,7 @@ def train_model(model: AConvLSTMModel, loaders: Dict[str, DataLoader],
 
     train_hist: List[float] = []
     val_hist:   List[float] = []
-    best_val, wait = float("inf"), 0
+    best_val = float("inf")
 
     Path(ckpt_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -170,13 +169,8 @@ def train_model(model: AConvLSTMModel, loaders: Dict[str, DataLoader],
 
         if v_loss < best_val:
             best_val = v_loss
-            wait = 0
             torch.save(model.state_dict(), ckpt_path)
-        else:
-            wait += 1
-            if wait >= CFG["patience"]:
-                print(f"  Early stop at epoch {epoch}")
-                break
+            print(f"    ↳ best val={best_val:.6f} — checkpoint saved")
 
     model.load_state_dict(torch.load(ckpt_path, weights_only=True))
     return train_hist, val_hist
@@ -186,9 +180,20 @@ def train_model(model: AConvLSTMModel, loaders: Dict[str, DataLoader],
 # EVALUATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _inverse_transform(tensor: torch.Tensor,
+                       norm_min: np.ndarray,
+                       norm_max: np.ndarray) -> torch.Tensor:
+    """(B, Q, 1, H, W) normalised → real scale using per-cell min/max."""
+    mn = torch.from_numpy(norm_min).float()   # (1, 16, 16)
+    mx = torch.from_numpy(norm_max).float()   # (1, 16, 16)
+    return tensor * (mx - mn + 1e-8) + mn
+
+
 @torch.no_grad()
-def evaluate(model: AConvLSTMModel, loader: DataLoader,
-             Q: int, device: torch.device) -> Dict:
+def evaluate(model: AConvLSTMLayers, loader: DataLoader,
+             Q: int, device: torch.device,
+             norm_min: np.ndarray = None,
+             norm_max: np.ndarray = None) -> Dict:
     model.eval()
     all_preds, all_targets = [], []
 
@@ -203,6 +208,7 @@ def evaluate(model: AConvLSTMModel, loader: DataLoader,
     preds   = torch.cat(all_preds)
     targets = torch.cat(all_targets)
 
+    # --- normalised-space metrics ---
     mse  = ((preds - targets) ** 2).mean().item()
     mae  = (preds - targets).abs().mean().item()
     rmse = mse ** 0.5
@@ -211,7 +217,7 @@ def evaluate(model: AConvLSTMModel, loader: DataLoader,
     per_step_mae = (preds - targets).abs().mean(dim=(0, 2, 3, 4)).tolist()
     spatial_mse  = ((preds - targets) ** 2).mean(dim=(0, 1, 2)).numpy()
 
-    return {
+    result = {
         "MSE": mse, "MAE": mae, "RMSE": rmse,
         "per_step_mse": per_step_mse,
         "per_step_mae": per_step_mae,
@@ -219,6 +225,26 @@ def evaluate(model: AConvLSTMModel, loader: DataLoader,
         "preds":   preds,
         "targets": targets,
     }
+
+    # --- real-space metrics (inverse-transformed) ---
+    if norm_min is not None and norm_max is not None:
+        preds_real   = _inverse_transform(preds, norm_min, norm_max)
+        targets_real = _inverse_transform(targets, norm_min, norm_max)
+
+        real_mse  = ((preds_real - targets_real) ** 2).mean().item()
+        real_mae  = (preds_real - targets_real).abs().mean().item()
+        real_rmse = real_mse ** 0.5
+
+        real_per_step_mse = ((preds_real - targets_real) ** 2).mean(dim=(0, 2, 3, 4)).tolist()
+        real_per_step_mae = (preds_real - targets_real).abs().mean(dim=(0, 2, 3, 4)).tolist()
+
+        result.update({
+            "real_MSE": real_mse, "real_MAE": real_mae, "real_RMSE": real_rmse,
+            "real_per_step_mse": real_per_step_mse,
+            "real_per_step_mae": real_per_step_mae,
+        })
+
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -306,21 +332,45 @@ def plot_predictions(preds, targets, sample_indices, cells, save_path, p_label):
 
 
 def _print_metrics(results: Dict, p_label: str):
-    w = 50
+    w = 55
     print(f"\n{'=' * w}  [{p_label}]")
-    print(f"{'Metric':<25s} {'Value':>12s}")
-    print("-" * w)
-    print(f"{'Test MSE':<25s} {results['MSE']:12.6f}")
-    print(f"{'Test MAE':<25s} {results['MAE']:12.6f}")
-    print(f"{'Test RMSE':<25s} {results['RMSE']:12.6f}")
-    print("=" * w)
+
+    # --- normalised-space ---
+    print(f"\n  {'Metric (normalised)':<30s} {'Value':>12s}")
+    print(f"  {'-' * 44}")
+    print(f"  {'Test MSE':<30s} {results['MSE']:12.6f}")
+    print(f"  {'Test MAE':<30s} {results['MAE']:12.6f}")
+    print(f"  {'Test RMSE':<30s} {results['RMSE']:12.6f}")
+
+    # --- real-space ---
+    if "real_MSE" in results:
+        print(f"\n  {'Metric (real scale)':<30s} {'Value':>14s}")
+        print(f"  {'-' * 46}")
+        print(f"  {'Test MSE':<30s} {results['real_MSE']:14.2f}")
+        print(f"  {'Test MAE':<30s} {results['real_MAE']:14.2f}")
+        print(f"  {'Test RMSE':<30s} {results['real_RMSE']:14.2f}")
+
+    print(f"\n{'=' * w}")
+
+    # --- per-step breakdown (normalised + real) ---
+    has_real = "real_per_step_mse" in results
     print("\nPer-step breakdown:")
-    print(f"  {'Step':<6s} {'MSE':>10s} {'MAE':>10s}")
-    print(f"  {'-'*28}")
-    for step, (mse, mae) in enumerate(
-        zip(results["per_step_mse"], results["per_step_mae"]), 1
-    ):
-        print(f"  {step:<6d} {mse:10.6f} {mae:10.6f}")
+    if has_real:
+        print(f"  {'Step':<6s} {'MSE(norm)':>10s} {'MAE(norm)':>10s}  "
+              f"{'MSE(real)':>12s} {'MAE(real)':>12s}")
+        print(f"  {'-' * 56}")
+        for step, (mse, mae, rmse, rmae) in enumerate(
+            zip(results["per_step_mse"], results["per_step_mae"],
+                results["real_per_step_mse"], results["real_per_step_mae"]), 1
+        ):
+            print(f"  {step:<6d} {mse:10.6f} {mae:10.6f}  {rmse:12.2f} {rmae:12.2f}")
+    else:
+        print(f"  {'Step':<6s} {'MSE':>10s} {'MAE':>10s}")
+        print(f"  {'-' * 28}")
+        for step, (mse, mae) in enumerate(
+            zip(results["per_step_mse"], results["per_step_mae"]), 1
+        ):
+            print(f"  {step:<6d} {mse:10.6f} {mae:10.6f}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -368,18 +418,17 @@ def run_experiment(p: int, device: torch.device):
     loaders = build_loaders(data, CFG["batch_size"])
 
     # ── model ─────────────────────────────────────────────────────────────
-    print(f"\nBuilding AConvLSTMModel for {p_label} ...")
+    print(f"\nBuilding AConvLSTMLayers for {p_label} ...")
     model = build_model(device)
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"  Trainable parameters : {total_params:,}")
-    print(f"  Conv3D channels      : {CFG['conv3d_channels']}")
     print(f"  Hidden channels      : {CFG['hidden_channels']}")
     print(f"  Kernel sizes         : {CFG['kernel_sizes']}")
     print(f"  Layers               : {CFG['num_layers']}")
 
     # ── train ─────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"Training AConvLSTMModel  [{p_label}]")
+    print(f"Training AConvLSTMLayers  [{p_label}]")
     print("=" * 60)
 
     t0 = time.time()
@@ -393,7 +442,9 @@ def run_experiment(p: int, device: torch.device):
 
     # ── evaluate ──────────────────────────────────────────────────────────
     print(f"\nEvaluating on test set  [{p_label}] ...")
-    results = evaluate(model, loaders["test"], Q, device)
+    norm_min = data.get("norm_min", None)
+    norm_max = data.get("norm_max", None)
+    results = evaluate(model, loaders["test"], Q, device, norm_min, norm_max)
     _print_metrics(results, p_label)
 
     # ── save metrics ──────────────────────────────────────────────────────
@@ -409,6 +460,14 @@ def run_experiment(p: int, device: torch.device):
         "total_params": total_params,
         "epochs_run": len(train_hist),
     }
+    if "real_MSE" in results:
+        metrics.update({
+            "real_MSE":  results["real_MSE"],
+            "real_MAE":  results["real_MAE"],
+            "real_RMSE": results["real_RMSE"],
+            "real_per_step_mse": results["real_per_step_mse"],
+            "real_per_step_mae": results["real_per_step_mae"],
+        })
     metrics_path = str(out_dir / "metrics.json")
     with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=2)
@@ -447,8 +506,6 @@ def main():
     parser.add_argument("--epochs",     type=int,   default=CFG["epochs"])
     parser.add_argument("--batch_size", type=int,   default=CFG["batch_size"])
     parser.add_argument("--lr",         type=float, default=CFG["lr"])
-    parser.add_argument("--patience",   type=int,   default=CFG["patience"])
-    parser.add_argument("--conv3d_channels", type=int, default=CFG["conv3d_channels"])
     parser.add_argument("--seed",       type=int,   default=CFG["seed"])
     parser.add_argument("--cpu", action="store_true",
                         help="Force CPU even when CUDA is available")
@@ -457,8 +514,6 @@ def main():
     CFG["epochs"]          = args.epochs
     CFG["batch_size"]      = args.batch_size
     CFG["lr"]              = args.lr
-    CFG["patience"]        = args.patience
-    CFG["conv3d_channels"] = args.conv3d_channels
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -473,13 +528,22 @@ def main():
         all_metrics[f"P{p}"] = run_experiment(p, device)
 
     # ── summary across all P ──────────────────────────────────────────────
-    print(f"\n{'=' * 65}")
+    has_real = any("real_RMSE" in m for m in all_metrics.values())
+    print(f"\n{'=' * 80}")
     print("Summary")
-    print(f"{'P':<6} {'MSE':>12} {'MAE':>12} {'RMSE':>12}")
-    print("-" * 45)
-    for label, m in all_metrics.items():
-        print(f"{label:<6} {m['MSE']:12.6f} {m['MAE']:12.6f} {m['RMSE']:12.6f}")
-    print("=" * 65)
+    if has_real:
+        print(f"{'P':<6} {'MSE(norm)':>12} {'MAE(norm)':>12} {'RMSE(norm)':>12}  "
+              f"{'RMSE(real)':>12}")
+        print("-" * 60)
+        for label, m in all_metrics.items():
+            print(f"{label:<6} {m['MSE']:12.6f} {m['MAE']:12.6f} {m['RMSE']:12.6f}  "
+                  f"{m.get('real_RMSE', float('nan')):12.2f}")
+    else:
+        print(f"{'P':<6} {'MSE':>12} {'MAE':>12} {'RMSE':>12}")
+        print("-" * 45)
+        for label, m in all_metrics.items():
+            print(f"{label:<6} {m['MSE']:12.6f} {m['MAE']:12.6f} {m['RMSE']:12.6f}")
+    print("=" * 80)
 
 
 if __name__ == "__main__":

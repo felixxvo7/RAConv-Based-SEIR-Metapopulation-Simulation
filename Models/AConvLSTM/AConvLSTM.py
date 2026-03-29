@@ -150,7 +150,7 @@ class AConvLSTMLayers(nn.Module):
                     each element of the list is a tuple (h, c) for hidden state and memory
     """
 
-    def __init__(self, input_channels, hidden_channels=[256,256], kernel_size=[3,3], num_layers=2, bias=True, use_attention=True):
+    def __init__(self, input_channels, hidden_channels=[256,256], kernel_size=[3,3], num_layers=2, bias=True, use_attention=True, dropout=0.0):
         super().__init__()
 
         self.input_channels = input_channels
@@ -159,7 +159,9 @@ class AConvLSTMLayers(nn.Module):
         self.bias = bias
         self.num_layers = num_layers # Fixed to 2 layers as per Figure 6
         self.use_attention = use_attention
+        self.dropout = nn.Dropout2d(dropout) if dropout > 0 else None
         self.output_conv = nn.Conv2d(self.hidden_channels[-1], 1, kernel_size=1)
+        self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
         # Other than first layer, input channels = hidden channels of previous layer
         cell_list = []
@@ -173,8 +175,6 @@ class AConvLSTMLayers(nn.Module):
                                           use_attention=self.use_attention))
 
         self.cell_list = nn.ModuleList(cell_list)
-        self.output_conv = nn.Conv2d(hidden_channels[-1], 1, kernel_size=1)
-        self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
     def forward(self, input_tensor):
         """
@@ -211,6 +211,11 @@ class AConvLSTMLayers(nn.Module):
                 output_inner.append(h)
 
             layer_output = torch.stack(output_inner, dim=1)
+            if self.dropout is not None and layer_idx < self.num_layers - 1:
+                b, t_len, ch, hh, ww = layer_output.shape
+                layer_output = self.dropout(
+                    layer_output.reshape(b * t_len, ch, hh, ww)
+                ).reshape(b, t_len, ch, hh, ww)
             cur_layer_input = layer_output
 
             layer_output_list.append(layer_output)
@@ -218,41 +223,58 @@ class AConvLSTMLayers(nn.Module):
 
         return layer_output_list, last_state_list
 
-    def predict_future(self, last_state_list, Q, first_input_feature):
+    def predict_future(self, last_state_list, Q, first_input):
         """
-        Args:
-            first_input_feature: The 128-ch feature map of the last historical frame
+        Generate Q future steps using autoregressive roll-forward.
+
+        Parameters
+        ----------
+        last_state_list: list of (h, c) for each layer
+        Q: number of future steps
+        first_input: (B, C, H, W) → usually last frame of input
+
+        Returns
+        -------
+        predictions: (B, Q, 1, H, W)
         """
-        cur_input = first_input_feature 
+
+        cur_input = first_input
         predictions = []
+
+        # Copy states (important to avoid modifying original)
         hidden_states = [(h.clone(), c.clone()) for (h, c) in last_state_list]
 
-        for t in range(Q):
-            x = cur_input # This is 128 channels
+        for _ in range(Q):
             new_hidden_states = []
 
+            x = cur_input  # input to first layer
+
+            # pass through stacked ConvLSTM layers
             for layer_idx in range(self.num_layers):
                 h, c = hidden_states[layer_idx]
-                h, c = self.cell_list[layer_idx](X=x, H_prev=h, C_prev=c)
+
+                h, c = self.cell_list[layer_idx](
+                    X=x,
+                    H_prev=h,
+                    C_prev=c
+                )
+
                 new_hidden_states.append((h, c))
-                x = h 
+                x = h  # output becomes next layer input
 
             # 1. Produce the 1-channel prediction
-            pred = self.output_conv(x) # x is 256-ch, pred is 1-ch
+            pred = self.output_conv(x) 
             predictions.append(pred)
 
-            # 2. FEEDBACK BRIDGE: Prepare input for next step (t+1)
-            # Up-project 1-channel 'pred' to 128-channels for the next loop
+            # 2. FEEDBACK BRIDGE: Map the 1-channel pred back to input_channels
+            #    for the first LSTM layer at the next step
             cur_input = self.input_projection_feedback(pred)
 
             hidden_states = new_hidden_states
 
-        return torch.stack(predictions, dim=1)
+        predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
+        return predictions
 
-
-# ---------------------------------------------------------------------------
-# AConvLSTMModel  — full pipeline: Conv3D → AConvLSTM×2 → output
-# ---------------------------------------------------------------------------
 
 class AConvLSTMModel(nn.Module):
     """
@@ -272,10 +294,11 @@ class AConvLSTMModel(nn.Module):
         num_layers=2,
         bias=True,
         use_attention=True,
+        dropout=0.0,
     ):
         super().__init__()
         if hidden_channels is None:
-            hidden_channels = [256, 256]
+            hidden_channels = [128, 128]
         if kernel_size is None:
             kernel_size = [3, 3]
 
@@ -294,6 +317,7 @@ class AConvLSTMModel(nn.Module):
             num_layers=num_layers,
             bias=bias,
             use_attention=use_attention,
+            dropout=dropout,
         )
 
     def _encode_sequence(self, x):
