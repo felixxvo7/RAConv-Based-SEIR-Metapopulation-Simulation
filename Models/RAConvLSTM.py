@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from ResBlock.ResBlock import ResBlock3D
-from ConvLSTM.AConvLSTM import AConvLSTMLayers
+from AConvLSTM.AConvLSTM import AConvLSTMLayers
 
 class RAConv(nn.Module):
     def __init__(self, in_channels=1, out_steps=4):
@@ -63,7 +63,7 @@ class RAConv(nn.Module):
         predictions = self.aconv_lstm.predict_future(
             last_state_list=last_state_list, 
             Q=self.out_steps, 
-            first_input_feature=last_feature_map
+            first_input=last_feature_map
         )
 
         return predictions
