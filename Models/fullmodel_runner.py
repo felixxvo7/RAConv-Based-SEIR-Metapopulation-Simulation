@@ -1,16 +1,16 @@
 """
-AConvLSTM Experiment Runner
-============================
-End-to-end pipeline: load preprocessed SEIR data, train the AConvLSTM model,
-evaluate on test set, and produce diagnostic plots.
+RAConv Experiment Runner
+========================
+End-to-end pipeline: load preprocessed SEIR data, train the full RAConv model
+(ResBlock3D + AConvLSTM), evaluate on test set, and produce diagnostic plots.
 
 Trains separately for each forecast horizon P (P7, P10, P14 by default).
-Results are saved to results/P<N>/ subdirectories.
+Results are saved to results_raconv/P<N>/ subdirectories.
 
 Usage:
-    python experiment_runner.py                          # trains P7, P10, P14
-    python experiment_runner.py --p 7 10                 # trains only P7 and P10
-    python experiment_runner.py --epochs 200 --lr 5e-4
+    python fullmodel_runner.py                          # trains P7, P10, P14
+    python fullmodel_runner.py --p 7 10                 # trains only P7 and P10
+    python fullmodel_runner.py --epochs 200 --lr 5e-4
 """
 
 import sys
@@ -32,9 +32,9 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from AConvLSTM import AConvLSTMLayers  # noqa: E402
+from RAConvLSTM import RAConv  # noqa: E402
 
-NPZ_DIR = SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output"
+NPZ_DIR = SCRIPT_DIR / "Preprocessing" / "preprocessed_output"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -48,12 +48,7 @@ CFG = dict(
     weight_decay=1e-4,
     seed=42,
 
-    hidden_channels=[128, 128],
-    kernel_sizes=[3, 3],
-    num_layers=2,
-    dropout=0.2,
-
-    results_dir=str(SCRIPT_DIR / "results"),
+    results_dir=str(SCRIPT_DIR / "results_raconv"),
 )
 
 
@@ -69,10 +64,10 @@ def load_npz(path: str) -> Dict[str, np.ndarray]:
 def _make_loader(X: np.ndarray, Y: np.ndarray,
                  batch_size: int, shuffle: bool) -> DataLoader:
     """
-    X: (N, T, H, W) → (N, T, 1, H, W)
+    X: (N, T, H, W) → (N, 1, T, H, W)   Conv3D layout for RAConv
     Y: (N, Q, H, W) → (N, Q, 1, H, W)
     """
-    Xt = torch.from_numpy(X).float().unsqueeze(2)
+    Xt = torch.from_numpy(X).float().unsqueeze(1)
     Yt = torch.from_numpy(Y).float().unsqueeze(2)
     return DataLoader(TensorDataset(Xt, Yt), batch_size=batch_size,
                       shuffle=shuffle, pin_memory=True)
@@ -91,16 +86,8 @@ def build_loaders(data: Dict[str, np.ndarray],
 # MODEL
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def build_model(device: torch.device) -> AConvLSTMLayers:
-    model = AConvLSTMLayers(
-        input_channels=1,
-        hidden_channels=CFG["hidden_channels"],
-        kernel_size=CFG["kernel_sizes"],
-        num_layers=CFG["num_layers"],
-        bias=True,
-        use_attention=True,
-        dropout=CFG["dropout"],
-    )
+def build_model(Q: int, device: torch.device) -> RAConv:
+    model = RAConv(in_channels=1, out_steps=Q)
     return model.to(device)
 
 
@@ -108,7 +95,7 @@ def build_model(device: torch.device) -> AConvLSTMLayers:
 # TRAINING
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
+def _run_epoch(model: RAConv, loader: DataLoader,
                criterion: nn.Module, optimizer=None,
                device: torch.device = torch.device("cpu")) -> float:
     is_train = optimizer is not None
@@ -120,9 +107,7 @@ def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
         for xb, yb in loader:
             xb, yb = xb.to(device), yb.to(device)
 
-            _, last_states = model(xb)
-            first_input = xb[:, -1, :, :, :]          # (B, 1, H, W)
-            preds = model.predict_future(last_states, Q, first_input)
+            preds = model(xb)
 
             loss = criterion(preds, yb)
 
@@ -138,8 +123,8 @@ def _run_epoch(model: AConvLSTMLayers, loader: DataLoader, Q: int,
     return total_loss / max(n, 1)
 
 
-def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
-                Q: int, device: torch.device,
+def train_model(model: RAConv, loaders: Dict[str, DataLoader],
+                device: torch.device,
                 ckpt_path: str) -> Tuple[List[float], List[float]]:
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG["lr"],
                                  weight_decay=CFG["weight_decay"])
@@ -155,9 +140,9 @@ def train_model(model: AConvLSTMLayers, loaders: Dict[str, DataLoader],
     Path(ckpt_path).parent.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(1, CFG["epochs"] + 1):
-        t_loss = _run_epoch(model, loaders["train"], Q, criterion,
+        t_loss = _run_epoch(model, loaders["train"], criterion,
                             optimizer, device)
-        v_loss = _run_epoch(model, loaders["val"], Q, criterion,
+        v_loss = _run_epoch(model, loaders["val"], criterion,
                             device=device)
         scheduler.step(v_loss)
         train_hist.append(t_loss)
@@ -190,8 +175,8 @@ def _inverse_transform(tensor: torch.Tensor,
 
 
 @torch.no_grad()
-def evaluate(model: AConvLSTMLayers, loader: DataLoader,
-             Q: int, device: torch.device,
+def evaluate(model: RAConv, loader: DataLoader,
+             device: torch.device,
              norm_min: np.ndarray = None,
              norm_max: np.ndarray = None) -> Dict:
     model.eval()
@@ -199,9 +184,7 @@ def evaluate(model: AConvLSTMLayers, loader: DataLoader,
 
     for xb, yb in loader:
         xb, yb = xb.to(device), yb.to(device)
-        _, last_states = model(xb)
-        first_input = xb[:, -1, :, :, :]
-        preds = model.predict_future(last_states, Q, first_input)
+        preds = model(xb)
         all_preds.append(preds.cpu())
         all_targets.append(yb.cpu())
 
@@ -258,7 +241,7 @@ def plot_loss_curves(train_hist, val_hist, save_path, p_label):
     ax.plot(epochs, val_hist,   label="Validation")
     ax.set_xlabel("Epoch")
     ax.set_ylabel("MSE Loss")
-    ax.set_title(f"AConvLSTM Training & Validation Loss  [{p_label}]")
+    ax.set_title(f"RAConv Training & Validation Loss  [{p_label}]")
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -382,7 +365,7 @@ def run_experiment(p: int, device: torch.device):
     npz_path = NPZ_DIR / f"seir_preprocessed_{p_label}.npz"
     out_dir  = Path(CFG["results_dir"]) / p_label
     out_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = str(out_dir / f"best_aconvlstm_{p_label}.pth")
+    ckpt_path = str(out_dir / f"best_raconv_{p_label}.pth")
 
     print(f"\n{'#' * 65}")
     print(f"  Experiment: {p_label}   data: {npz_path}")
@@ -418,21 +401,19 @@ def run_experiment(p: int, device: torch.device):
     loaders = build_loaders(data, CFG["batch_size"])
 
     # ── model ─────────────────────────────────────────────────────────────
-    print(f"\nBuilding AConvLSTMLayers for {p_label} ...")
-    model = build_model(device)
+    print(f"\nBuilding RAConv for {p_label} ...")
+    model = build_model(Q, device)
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"  Trainable parameters : {total_params:,}")
-    print(f"  Hidden channels      : {CFG['hidden_channels']}")
-    print(f"  Kernel sizes         : {CFG['kernel_sizes']}")
-    print(f"  Layers               : {CFG['num_layers']}")
+    print(f"  Forecast steps (Q)   : {Q}")
 
     # ── train ─────────────────────────────────────────────────────────────
     print(f"\n{'=' * 60}")
-    print(f"Training AConvLSTMLayers  [{p_label}]")
+    print(f"Training RAConv  [{p_label}]")
     print("=" * 60)
 
     t0 = time.time()
-    train_hist, val_hist = train_model(model, loaders, Q, device, ckpt_path)
+    train_hist, val_hist = train_model(model, loaders, device, ckpt_path)
     elapsed = time.time() - t0
 
     print(f"\nTraining completed in {elapsed:.1f}s ({elapsed / 60:.1f} min)")
@@ -444,7 +425,7 @@ def run_experiment(p: int, device: torch.device):
     print(f"\nEvaluating on test set  [{p_label}] ...")
     norm_min = data.get("norm_min", None)
     norm_max = data.get("norm_max", None)
-    results = evaluate(model, loaders["test"], Q, device, norm_min, norm_max)
+    results = evaluate(model, loaders["test"], device, norm_min, norm_max)
     _print_metrics(results, p_label)
 
     # ── save metrics ──────────────────────────────────────────────────────
@@ -499,7 +480,7 @@ def run_experiment(p: int, device: torch.device):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
-    parser = argparse.ArgumentParser(description="AConvLSTM Experiment Runner")
+    parser = argparse.ArgumentParser(description="RAConv Experiment Runner")
     parser.add_argument("--p", type=int, nargs="+", default=[7, 10, 14],
                         choices=[7, 10, 14],
                         help="Lookback window(s) P to train (default: 7 10 14); forecast horizon Q is fixed at 7")
