@@ -42,7 +42,7 @@ NPZ_DIR = SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output"
 # ═══════════════════════════════════════════════════════════════════════════════
 
 CFG = dict(
-    epochs=100,
+    epochs=50,
     batch_size=16,
     lr=1e-3,
     weight_decay=1e-4,

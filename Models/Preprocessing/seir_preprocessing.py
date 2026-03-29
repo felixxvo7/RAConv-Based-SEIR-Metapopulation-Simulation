@@ -164,13 +164,13 @@ def preprocess(
     grid = reshape_to_grid(seir_df, city_grid)
     print(f"[2/5] Spatial tensor : {grid.shape}")
 
-    # 3  global min-max normalisation (fit on full 300-day grid)
-    mn, mx = minmax_fit(grid)
+    # 3  global min-max normalisation (fit on train days only to avoid leakage)
+    val_days   = int(train_days * val_ratio)
+    mn, mx = minmax_fit(grid[:train_days - val_days])
     grid_norm = minmax_transform(grid, mn, mx)
-    print(f"[3/5] Normalised   : global [{mn:.4f}, {mx:.4f}] → grid [{grid_norm.min():.4f}, {grid_norm.max():.4f}]")
+    print(f"[3/5] Normalised   : train-fit [{mn:.4f}, {mx:.4f}] → grid [{grid_norm.min():.4f}, {grid_norm.max():.4f}]")
 
     # 4  chronological split (on already-normalised data)
-    val_days   = int(train_days * val_ratio)
     train_norm = grid_norm[:train_days - val_days]
     val_norm   = grid_norm[train_days - val_days:train_days]
     test_norm  = grid_norm[train_days:]
@@ -221,8 +221,8 @@ def main():
             save_path=os.path.join(base, 'preprocessed_output', f'seir_preprocessed_P{P}.npz'),
             seq_len=P,
             pred_len=Q,
-            train_days=200,
-            val_ratio=0.20,
+            train_days=240,
+            val_ratio=0.25,
             stride=1,
         )
 
