@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from AConvLSTM import AConvLSTMLayers  # noqa: E402
+from AConvLSTM2 import AConvLSTMLayers  # noqa: E402
 
 NPZ_DIR = SCRIPT_DIR.parent / "Preprocessing" / "preprocessed_output"
 
