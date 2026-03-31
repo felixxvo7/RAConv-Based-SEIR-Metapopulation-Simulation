@@ -1,0 +1,649 @@
+Device: cuda
+
+#################################################################
+  Experiment: P4   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P4.npz
+#################################################################
+  Lookback window  P = 4
+  Forecast horizon Q = 7
+  X_train (170, 4, 16, 16)  Y_train (170, 7, 16, 16)
+  X_val   (50, 4, 16, 16)    Y_val   (50, 7, 16, 16)
+  X_test  (51, 4, 16, 16)   Y_test  (51, 7, 16, 16)
+
+Building RAConv for P4 ...
+  Trainable parameters : 12,345,473
+  Forecast steps (Q)   : 7
+
+============================================================
+Training RAConv  [P4]
+============================================================
+  Epoch   1/50  train=1.287727  val=0.003251  lr=1.0e-03
+    ↳ best val=0.003251 — checkpoint saved
+  Epoch   2/50  train=0.001452  val=0.002424  lr=1.0e-03
+    ↳ best val=0.002424 — checkpoint saved
+  Epoch   3/50  train=0.000876  val=0.002189  lr=1.0e-03
+    ↳ best val=0.002189 — checkpoint saved
+  Epoch   4/50  train=0.000775  val=0.002176  lr=1.0e-03
+    ↳ best val=0.002176 — checkpoint saved
+  Epoch   5/50  train=0.000747  val=0.002158  lr=1.0e-03
+    ↳ best val=0.002158 — checkpoint saved
+  Epoch   6/50  train=0.000737  val=0.002152  lr=1.0e-03
+    ↳ best val=0.002152 — checkpoint saved
+  Epoch   7/50  train=0.000731  val=0.002130  lr=1.0e-03
+    ↳ best val=0.002130 — checkpoint saved
+  Epoch   8/50  train=0.000728  val=0.002106  lr=1.0e-03
+    ↳ best val=0.002106 — checkpoint saved
+  Epoch   9/50  train=0.000724  val=0.002099  lr=1.0e-03
+    ↳ best val=0.002099 — checkpoint saved
+  Epoch  10/50  train=0.000725  val=0.002067  lr=1.0e-03
+    ↳ best val=0.002067 — checkpoint saved
+  Epoch  11/50  train=0.000709  val=0.002066  lr=1.0e-03
+    ↳ best val=0.002066 — checkpoint saved
+  Epoch  12/50  train=0.000695  val=0.002016  lr=1.0e-03
+    ↳ best val=0.002016 — checkpoint saved
+  Epoch  13/50  train=0.000684  val=0.002008  lr=1.0e-03
+    ↳ best val=0.002008 — checkpoint saved
+  Epoch  14/50  train=0.001619  val=0.002630  lr=1.0e-03
+  Epoch  15/50  train=0.000978  val=0.002121  lr=1.0e-03
+  Epoch  16/50  train=0.000734  val=0.002000  lr=1.0e-03
+    ↳ best val=0.002000 — checkpoint saved
+  Epoch  17/50  train=0.000659  val=0.001950  lr=1.0e-03
+    ↳ best val=0.001950 — checkpoint saved
+  Epoch  18/50  train=0.000595  val=0.001999  lr=1.0e-03
+  Epoch  19/50  train=0.000557  val=0.001703  lr=1.0e-03
+    ↳ best val=0.001703 — checkpoint saved
+  Epoch  20/50  train=0.000432  val=0.001963  lr=1.0e-03
+  Epoch  21/50  train=0.000651  val=0.001957  lr=1.0e-03
+  Epoch  22/50  train=0.000251  val=0.001891  lr=1.0e-03
+  Epoch  23/50  train=0.000555  val=0.001830  lr=1.0e-03
+  Epoch  24/50  train=0.000390  val=0.001079  lr=1.0e-03
+    ↳ best val=0.001079 — checkpoint saved
+  Epoch  25/50  train=0.001633  val=0.001628  lr=1.0e-03
+  Epoch  26/50  train=0.000437  val=0.001169  lr=1.0e-03
+  Epoch  27/50  train=0.000261  val=0.000745  lr=1.0e-03
+    ↳ best val=0.000745 — checkpoint saved
+  Epoch  28/50  train=0.000108  val=0.000994  lr=1.0e-03
+  Epoch  29/50  train=0.000107  val=0.001265  lr=1.0e-03
+  Epoch  30/50  train=0.000075  val=0.000729  lr=1.0e-03
+    ↳ best val=0.000729 — checkpoint saved
+  Epoch  31/50  train=0.000103  val=0.000896  lr=1.0e-03
+  Epoch  32/50  train=0.000491  val=0.001842  lr=1.0e-03
+  Epoch  33/50  train=0.001682  val=0.002727  lr=1.0e-03
+  Epoch  34/50  train=0.001365  val=0.001306  lr=1.0e-03
+  Epoch  35/50  train=0.000512  val=0.001134  lr=1.0e-03
+  Epoch  36/50  train=0.000268  val=0.000520  lr=1.0e-03
+    ↳ best val=0.000520 — checkpoint saved
+  Epoch  37/50  train=0.000150  val=0.000371  lr=1.0e-03
+    ↳ best val=0.000371 — checkpoint saved
+  Epoch  38/50  train=0.000083  val=0.000717  lr=1.0e-03
+  Epoch  39/50  train=0.000063  val=0.003461  lr=1.0e-03
+  Epoch  40/50  train=0.000811  val=0.002081  lr=1.0e-03
+  Epoch  41/50  train=0.000688  val=0.001884  lr=1.0e-03
+  Epoch  42/50  train=0.002688  val=0.004243  lr=1.0e-03
+  Epoch  43/50  train=0.001598  val=0.002164  lr=5.0e-04
+  Epoch  44/50  train=0.000732  val=0.001868  lr=5.0e-04
+  Epoch  45/50  train=0.000623  val=0.001711  lr=5.0e-04
+  Epoch  46/50  train=0.000530  val=0.001583  lr=5.0e-04
+  Epoch  47/50  train=0.000444  val=0.001333  lr=5.0e-04
+  Epoch  48/50  train=0.000329  val=0.001019  lr=5.0e-04
+  Epoch  49/50  train=0.000224  val=0.000703  lr=2.5e-04
+  Epoch  50/50  train=0.000157  val=0.000604  lr=2.5e-04
+
+Training completed in 118.8s (2.0 min)
+  Epochs run    : 50
+  Best val loss : 0.000371
+  Checkpoint    : /home/student/vohbl/Models/results_raconv/P4/best_raconv_P4.pth
+
+Evaluating on test set  [P4] ...
+
+=======================================================  [P4]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.002680
+  Test MAE                           0.007605
+  Test RMSE                          0.051772
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          20777156.00
+  Test MAE                               624.38
+  Test RMSE                             4558.20
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.002559   0.007442   19787060.00       594.98
+  2        0.002640   0.007950   20464652.00       657.59
+  3        0.002664   0.007411   20635596.00       584.60
+  4        0.002699   0.007562   20934608.00       627.48
+  5        0.002704   0.007665   20974152.00       636.83
+  6        0.002724   0.007614   21129492.00       632.65
+  7        0.002773   0.007591   21514544.00       636.51
+
+  Saved metrics -> /home/student/vohbl/Models/results_raconv/P4/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/results_raconv/P4/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/results_raconv/P4/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/results_raconv/P4/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/results_raconv/P4/pred_vs_actual.png
+
+  All P4 results saved to /home/student/vohbl/Models/results_raconv/P4
+
+#################################################################
+  Experiment: P6   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P6.npz
+#################################################################
+  Lookback window  P = 6
+  Forecast horizon Q = 7
+  X_train (168, 6, 16, 16)  Y_train (168, 7, 16, 16)
+  X_val   (48, 6, 16, 16)    Y_val   (48, 7, 16, 16)
+  X_test  (49, 6, 16, 16)   Y_test  (49, 7, 16, 16)
+
+Building RAConv for P6 ...
+  Trainable parameters : 12,345,473
+  Forecast steps (Q)   : 7
+
+============================================================
+Training RAConv  [P6]
+============================================================
+  Epoch   1/50  train=0.870966  val=0.008385  lr=1.0e-03
+    ↳ best val=0.008385 — checkpoint saved
+  Epoch   2/50  train=0.003970  val=0.003039  lr=1.0e-03
+    ↳ best val=0.003039 — checkpoint saved
+  Epoch   3/50  train=0.001231  val=0.002615  lr=1.0e-03
+    ↳ best val=0.002615 — checkpoint saved
+  Epoch   4/50  train=0.000821  val=0.002290  lr=1.0e-03
+    ↳ best val=0.002290 — checkpoint saved
+  Epoch   5/50  train=0.000696  val=0.002310  lr=1.0e-03
+  Epoch   6/50  train=0.000629  val=0.002228  lr=1.0e-03
+    ↳ best val=0.002228 — checkpoint saved
+  Epoch   7/50  train=0.000568  val=0.002128  lr=1.0e-03
+    ↳ best val=0.002128 — checkpoint saved
+  Epoch   8/50  train=0.000510  val=0.001942  lr=1.0e-03
+    ↳ best val=0.001942 — checkpoint saved
+  Epoch   9/50  train=0.000441  val=0.001852  lr=1.0e-03
+    ↳ best val=0.001852 — checkpoint saved
+  Epoch  10/50  train=0.000718  val=0.001961  lr=1.0e-03
+  Epoch  11/50  train=0.000605  val=0.001785  lr=1.0e-03
+    ↳ best val=0.001785 — checkpoint saved
+  Epoch  12/50  train=0.000495  val=0.001760  lr=1.0e-03
+    ↳ best val=0.001760 — checkpoint saved
+  Epoch  13/50  train=0.000375  val=0.001912  lr=1.0e-03
+  Epoch  14/50  train=0.000234  val=0.001979  lr=1.0e-03
+  Epoch  15/50  train=0.000735  val=0.002189  lr=1.0e-03
+  Epoch  16/50  train=0.000718  val=0.001996  lr=1.0e-03
+  Epoch  17/50  train=0.001496  val=0.002354  lr=1.0e-03
+  Epoch  18/50  train=0.000909  val=0.001986  lr=5.0e-04
+  Epoch  19/50  train=0.000579  val=0.001739  lr=5.0e-04
+    ↳ best val=0.001739 — checkpoint saved
+  Epoch  20/50  train=0.000432  val=0.001506  lr=5.0e-04
+    ↳ best val=0.001506 — checkpoint saved
+  Epoch  21/50  train=0.000306  val=0.001483  lr=5.0e-04
+    ↳ best val=0.001483 — checkpoint saved
+  Epoch  22/50  train=0.000197  val=0.000952  lr=5.0e-04
+    ↳ best val=0.000952 — checkpoint saved
+  Epoch  23/50  train=0.000133  val=0.000457  lr=5.0e-04
+    ↳ best val=0.000457 — checkpoint saved
+  Epoch  24/50  train=0.000094  val=0.000302  lr=5.0e-04
+    ↳ best val=0.000302 — checkpoint saved
+  Epoch  25/50  train=0.000159  val=0.001204  lr=5.0e-04
+  Epoch  26/50  train=0.000214  val=0.000402  lr=5.0e-04
+  Epoch  27/50  train=0.000104  val=0.000265  lr=5.0e-04
+    ↳ best val=0.000265 — checkpoint saved
+  Epoch  28/50  train=0.000070  val=0.000410  lr=5.0e-04
+  Epoch  29/50  train=0.000098  val=0.000342  lr=5.0e-04
+  Epoch  30/50  train=0.000087  val=0.000581  lr=5.0e-04
+  Epoch  31/50  train=0.000071  val=0.000942  lr=5.0e-04
+  Epoch  32/50  train=0.000087  val=0.000650  lr=5.0e-04
+  Epoch  33/50  train=0.000080  val=0.000536  lr=2.5e-04
+  Epoch  34/50  train=0.000073  val=0.000440  lr=2.5e-04
+  Epoch  35/50  train=0.000051  val=0.000150  lr=2.5e-04
+    ↳ best val=0.000150 — checkpoint saved
+  Epoch  36/50  train=0.000047  val=0.000232  lr=2.5e-04
+  Epoch  37/50  train=0.000064  val=0.001038  lr=2.5e-04
+  Epoch  38/50  train=0.000089  val=0.000440  lr=2.5e-04
+  Epoch  39/50  train=0.000089  val=0.000204  lr=2.5e-04
+  Epoch  40/50  train=0.000050  val=0.000130  lr=2.5e-04
+    ↳ best val=0.000130 — checkpoint saved
+  Epoch  41/50  train=0.000041  val=0.000429  lr=2.5e-04
+  Epoch  42/50  train=0.000067  val=0.000181  lr=2.5e-04
+  Epoch  43/50  train=0.000062  val=0.000361  lr=2.5e-04
+  Epoch  44/50  train=0.000058  val=0.000150  lr=2.5e-04
+  Epoch  45/50  train=0.000061  val=0.000990  lr=2.5e-04
+  Epoch  46/50  train=0.000046  val=0.000695  lr=1.3e-04
+  Epoch  47/50  train=0.000058  val=0.000135  lr=1.3e-04
+  Epoch  48/50  train=0.000042  val=0.000363  lr=1.3e-04
+  Epoch  49/50  train=0.000082  val=0.000143  lr=1.3e-04
+  Epoch  50/50  train=0.000044  val=0.000130  lr=1.3e-04
+
+Training completed in 135.4s (2.3 min)
+  Epochs run    : 50
+  Best val loss : 0.000130
+  Checkpoint    : /home/student/vohbl/Models/results_raconv/P6/best_raconv_P6.pth
+
+Evaluating on test set  [P6] ...
+
+=======================================================  [P6]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.001846
+  Test MAE                           0.006331
+  Test RMSE                          0.042966
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          14247012.00
+  Test MAE                               484.32
+  Test RMSE                             3774.52
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.001971   0.008542   14966589.00       550.96
+  2        0.001796   0.006743   13822311.00       479.00
+  3        0.001760   0.006129   13614373.00       462.30
+  4        0.001754   0.006200   13598208.00       530.20
+  5        0.001823   0.005491   14126096.00       444.66
+  6        0.001859   0.005600   14417403.00       467.50
+  7        0.001960   0.005610   15184097.00       455.61
+
+  Saved metrics -> /home/student/vohbl/Models/results_raconv/P6/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/results_raconv/P6/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/results_raconv/P6/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/results_raconv/P6/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/results_raconv/P6/pred_vs_actual.png
+
+  All P6 results saved to /home/student/vohbl/Models/results_raconv/P6
+
+#################################################################
+  Experiment: P8   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P8.npz
+#################################################################
+  Lookback window  P = 8
+  Forecast horizon Q = 7
+  X_train (166, 8, 16, 16)  Y_train (166, 7, 16, 16)
+  X_val   (46, 8, 16, 16)    Y_val   (46, 7, 16, 16)
+  X_test  (47, 8, 16, 16)   Y_test  (47, 7, 16, 16)
+
+Building RAConv for P8 ...
+  Trainable parameters : 12,345,473
+  Forecast steps (Q)   : 7
+
+============================================================
+Training RAConv  [P8]
+============================================================
+  Epoch   1/50  train=0.881660  val=0.017496  lr=1.0e-03
+    ↳ best val=0.017496 — checkpoint saved
+  Epoch   2/50  train=0.003966  val=0.004442  lr=1.0e-03
+    ↳ best val=0.004442 — checkpoint saved
+  Epoch   3/50  train=0.001361  val=0.002650  lr=1.0e-03
+    ↳ best val=0.002650 — checkpoint saved
+  Epoch   4/50  train=0.000897  val=0.002675  lr=1.0e-03
+  Epoch   5/50  train=0.000753  val=0.002322  lr=1.0e-03
+    ↳ best val=0.002322 — checkpoint saved
+  Epoch   6/50  train=0.000673  val=0.002357  lr=1.0e-03
+  Epoch   7/50  train=0.000619  val=0.002254  lr=1.0e-03
+    ↳ best val=0.002254 — checkpoint saved
+  Epoch   8/50  train=0.000558  val=0.002119  lr=1.0e-03
+    ↳ best val=0.002119 — checkpoint saved
+  Epoch   9/50  train=0.000479  val=0.001990  lr=1.0e-03
+    ↳ best val=0.001990 — checkpoint saved
+  Epoch  10/50  train=0.000386  val=0.001816  lr=1.0e-03
+    ↳ best val=0.001816 — checkpoint saved
+  Epoch  11/50  train=0.000350  val=0.001181  lr=1.0e-03
+    ↳ best val=0.001181 — checkpoint saved
+  Epoch  12/50  train=0.000370  val=0.001759  lr=1.0e-03
+  Epoch  13/50  train=0.000372  val=0.000824  lr=1.0e-03
+    ↳ best val=0.000824 — checkpoint saved
+  Epoch  14/50  train=0.000211  val=0.000822  lr=1.0e-03
+    ↳ best val=0.000822 — checkpoint saved
+  Epoch  15/50  train=0.000135  val=0.001019  lr=1.0e-03
+  Epoch  16/50  train=0.000119  val=0.001393  lr=1.0e-03
+  Epoch  17/50  train=0.000426  val=0.000737  lr=1.0e-03
+    ↳ best val=0.000737 — checkpoint saved
+  Epoch  18/50  train=0.000191  val=0.000338  lr=1.0e-03
+    ↳ best val=0.000338 — checkpoint saved
+  Epoch  19/50  train=0.000124  val=0.000340  lr=1.0e-03
+  Epoch  20/50  train=0.000185  val=0.000501  lr=1.0e-03
+  Epoch  21/50  train=0.000112  val=0.000896  lr=1.0e-03
+  Epoch  22/50  train=0.001020  val=0.001991  lr=1.0e-03
+  Epoch  23/50  train=0.000721  val=0.000799  lr=1.0e-03
+  Epoch  24/50  train=0.000221  val=0.000427  lr=5.0e-04
+  Epoch  25/50  train=0.000101  val=0.000530  lr=5.0e-04
+  Epoch  26/50  train=0.000087  val=0.000884  lr=5.0e-04
+  Epoch  27/50  train=0.000097  val=0.000468  lr=5.0e-04
+  Epoch  28/50  train=0.000088  val=0.000440  lr=5.0e-04
+  Epoch  29/50  train=0.000070  val=0.000867  lr=5.0e-04
+  Epoch  30/50  train=0.000059  val=0.000549  lr=2.5e-04
+  Epoch  31/50  train=0.000068  val=0.000195  lr=2.5e-04
+    ↳ best val=0.000195 — checkpoint saved
+  Epoch  32/50  train=0.000054  val=0.000575  lr=2.5e-04
+  Epoch  33/50  train=0.000075  val=0.000546  lr=2.5e-04
+  Epoch  34/50  train=0.000063  val=0.000165  lr=2.5e-04
+    ↳ best val=0.000165 — checkpoint saved
+  Epoch  35/50  train=0.000073  val=0.000215  lr=2.5e-04
+  Epoch  36/50  train=0.000042  val=0.000634  lr=2.5e-04
+  Epoch  37/50  train=0.000034  val=0.000177  lr=2.5e-04
+  Epoch  38/50  train=0.000057  val=0.000185  lr=2.5e-04
+  Epoch  39/50  train=0.000053  val=0.000339  lr=2.5e-04
+  Epoch  40/50  train=0.000041  val=0.000195  lr=1.3e-04
+  Epoch  41/50  train=0.000029  val=0.000116  lr=1.3e-04
+    ↳ best val=0.000116 — checkpoint saved
+  Epoch  42/50  train=0.000040  val=0.000125  lr=1.3e-04
+  Epoch  43/50  train=0.000034  val=0.000186  lr=1.3e-04
+  Epoch  44/50  train=0.000038  val=0.000308  lr=1.3e-04
+  Epoch  45/50  train=0.000038  val=0.000107  lr=1.3e-04
+    ↳ best val=0.000107 — checkpoint saved
+  Epoch  46/50  train=0.000033  val=0.000111  lr=1.3e-04
+  Epoch  47/50  train=0.000035  val=0.000570  lr=1.3e-04
+  Epoch  48/50  train=0.000058  val=0.000145  lr=1.3e-04
+  Epoch  49/50  train=0.000032  val=0.000106  lr=1.3e-04
+    ↳ best val=0.000106 — checkpoint saved
+  Epoch  50/50  train=0.000034  val=0.000155  lr=1.3e-04
+
+Training completed in 158.5s (2.6 min)
+  Epochs run    : 50
+  Best val loss : 0.000106
+  Checkpoint    : /home/student/vohbl/Models/results_raconv/P8/best_raconv_P8.pth
+
+Evaluating on test set  [P8] ...
+
+=======================================================  [P8]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.001564
+  Test MAE                           0.005556
+  Test RMSE                          0.039545
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          12126329.00
+  Test MAE                               476.70
+  Test RMSE                             3482.29
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.001727   0.007410   13338330.00       610.46
+  2        0.001498   0.005744   11628240.00       502.32
+  3        0.001591   0.005840   12349196.00       513.17
+  4        0.001548   0.005039   12018484.00       438.58
+  5        0.001533   0.004806   11886506.00       408.61
+  6        0.001473   0.005005   11430292.00       429.00
+  7        0.001576   0.005050   12233249.00       434.78
+
+  Saved metrics -> /home/student/vohbl/Models/results_raconv/P8/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/results_raconv/P8/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/results_raconv/P8/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/results_raconv/P8/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/results_raconv/P8/pred_vs_actual.png
+
+  All P8 results saved to /home/student/vohbl/Models/results_raconv/P8
+
+#################################################################
+  Experiment: P10   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P10.npz
+#################################################################
+  Lookback window  P = 10
+  Forecast horizon Q = 7
+  X_train (164, 10, 16, 16)  Y_train (164, 7, 16, 16)
+  X_val   (44, 10, 16, 16)    Y_val   (44, 7, 16, 16)
+  X_test  (45, 10, 16, 16)   Y_test  (45, 7, 16, 16)
+
+Building RAConv for P10 ...
+  Trainable parameters : 12,345,473
+  Forecast steps (Q)   : 7
+
+============================================================
+Training RAConv  [P10]
+============================================================
+  Epoch   1/50  train=0.897142  val=0.012997  lr=1.0e-03
+    ↳ best val=0.012997 — checkpoint saved
+  Epoch   2/50  train=0.011229  val=0.002683  lr=1.0e-03
+    ↳ best val=0.002683 — checkpoint saved
+  Epoch   3/50  train=0.001144  val=0.002853  lr=1.0e-03
+  Epoch   4/50  train=0.000830  val=0.002411  lr=1.0e-03
+    ↳ best val=0.002411 — checkpoint saved
+  Epoch   5/50  train=0.000716  val=0.002413  lr=1.0e-03
+  Epoch   6/50  train=0.000651  val=0.002418  lr=1.0e-03
+  Epoch   7/50  train=0.000547  val=0.001989  lr=1.0e-03
+    ↳ best val=0.001989 — checkpoint saved
+  Epoch   8/50  train=0.000557  val=0.002033  lr=1.0e-03
+  Epoch   9/50  train=0.000459  val=0.001145  lr=1.0e-03
+    ↳ best val=0.001145 — checkpoint saved
+  Epoch  10/50  train=0.000307  val=0.001325  lr=1.0e-03
+  Epoch  11/50  train=0.000374  val=0.001636  lr=1.0e-03
+  Epoch  12/50  train=0.000388  val=0.001499  lr=1.0e-03
+  Epoch  13/50  train=0.000290  val=0.000535  lr=1.0e-03
+    ↳ best val=0.000535 — checkpoint saved
+  Epoch  14/50  train=0.000168  val=0.000446  lr=1.0e-03
+    ↳ best val=0.000446 — checkpoint saved
+  Epoch  15/50  train=0.000106  val=0.000298  lr=1.0e-03
+    ↳ best val=0.000298 — checkpoint saved
+  Epoch  16/50  train=0.001379  val=0.001458  lr=1.0e-03
+  Epoch  17/50  train=0.000782  val=0.002554  lr=1.0e-03
+  Epoch  18/50  train=0.000545  val=0.000843  lr=1.0e-03
+  Epoch  19/50  train=0.000246  val=0.000451  lr=1.0e-03
+  Epoch  20/50  train=0.000114  val=0.000321  lr=1.0e-03
+  Epoch  21/50  train=0.000111  val=0.000300  lr=5.0e-04
+  Epoch  22/50  train=0.000111  val=0.000219  lr=5.0e-04
+    ↳ best val=0.000219 — checkpoint saved
+  Epoch  23/50  train=0.000092  val=0.000625  lr=5.0e-04
+  Epoch  24/50  train=0.000066  val=0.000227  lr=5.0e-04
+  Epoch  25/50  train=0.000066  val=0.000305  lr=5.0e-04
+  Epoch  26/50  train=0.000042  val=0.000617  lr=5.0e-04
+  Epoch  27/50  train=0.000052  val=0.000272  lr=5.0e-04
+  Epoch  28/50  train=0.000128  val=0.000282  lr=2.5e-04
+  Epoch  29/50  train=0.000068  val=0.000306  lr=2.5e-04
+  Epoch  30/50  train=0.000042  val=0.000364  lr=2.5e-04
+  Epoch  31/50  train=0.000058  val=0.000222  lr=2.5e-04
+  Epoch  32/50  train=0.000057  val=0.000138  lr=2.5e-04
+    ↳ best val=0.000138 — checkpoint saved
+  Epoch  33/50  train=0.000082  val=0.000168  lr=2.5e-04
+  Epoch  34/50  train=0.000062  val=0.000354  lr=2.5e-04
+  Epoch  35/50  train=0.000051  val=0.000156  lr=2.5e-04
+  Epoch  36/50  train=0.000083  val=0.000452  lr=2.5e-04
+  Epoch  37/50  train=0.000059  val=0.000233  lr=2.5e-04
+  Epoch  38/50  train=0.000085  val=0.000170  lr=1.3e-04
+  Epoch  39/50  train=0.000034  val=0.000227  lr=1.3e-04
+  Epoch  40/50  train=0.000048  val=0.000132  lr=1.3e-04
+    ↳ best val=0.000132 — checkpoint saved
+  Epoch  41/50  train=0.000058  val=0.000142  lr=1.3e-04
+  Epoch  42/50  train=0.000038  val=0.000215  lr=1.3e-04
+  Epoch  43/50  train=0.000042  val=0.000136  lr=1.3e-04
+  Epoch  44/50  train=0.000045  val=0.000134  lr=1.3e-04
+  Epoch  45/50  train=0.000071  val=0.000140  lr=1.3e-04
+  Epoch  46/50  train=0.000045  val=0.000147  lr=6.3e-05
+  Epoch  47/50  train=0.000028  val=0.000129  lr=6.3e-05
+    ↳ best val=0.000129 — checkpoint saved
+  Epoch  48/50  train=0.000038  val=0.000224  lr=6.3e-05
+  Epoch  49/50  train=0.000039  val=0.000120  lr=6.3e-05
+    ↳ best val=0.000120 — checkpoint saved
+  Epoch  50/50  train=0.000037  val=0.000135  lr=6.3e-05
+
+Training completed in 173.2s (2.9 min)
+  Epochs run    : 50
+  Best val loss : 0.000120
+  Checkpoint    : /home/student/vohbl/Models/results_raconv/P10/best_raconv_P10.pth
+
+Evaluating on test set  [P10] ...
+
+=======================================================  [P10]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.001734
+  Test MAE                           0.005705
+  Test RMSE                          0.041637
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          13398549.00
+  Test MAE                               445.07
+  Test RMSE                             3660.40
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.002150   0.007993   16420056.00       522.42
+  2        0.001923   0.006024   14890311.00       493.05
+  3        0.001756   0.005322   13595577.00       420.99
+  4        0.001664   0.005641   12881991.00       418.99
+  5        0.001589   0.005079   12323538.00       425.38
+  6        0.001536   0.004916   11916670.00       419.67
+  7        0.001517   0.004961   11761697.00       415.02
+
+  Saved metrics -> /home/student/vohbl/Models/results_raconv/P10/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/results_raconv/P10/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/results_raconv/P10/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/results_raconv/P10/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/results_raconv/P10/pred_vs_actual.png
+
+  All P10 results saved to /home/student/vohbl/Models/results_raconv/P10
+
+#################################################################
+  Experiment: P14   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P14.npz
+#################################################################
+  Lookback window  P = 14
+  Forecast horizon Q = 7
+  X_train (160, 14, 16, 16)  Y_train (160, 7, 16, 16)
+  X_val   (40, 14, 16, 16)    Y_val   (40, 7, 16, 16)
+  X_test  (41, 14, 16, 16)   Y_test  (41, 7, 16, 16)
+
+Building RAConv for P14 ...
+  Trainable parameters : 12,345,473
+  Forecast steps (Q)   : 7
+
+============================================================
+Training RAConv  [P14]
+============================================================
+  Epoch   1/50  train=1.041654  val=0.039595  lr=1.0e-03
+    ↳ best val=0.039595 — checkpoint saved
+  Epoch   2/50  train=0.010407  val=0.003235  lr=1.0e-03
+    ↳ best val=0.003235 — checkpoint saved
+  Epoch   3/50  train=0.002351  val=0.003016  lr=1.0e-03
+    ↳ best val=0.003016 — checkpoint saved
+  Epoch   4/50  train=0.001189  val=0.003060  lr=1.0e-03
+  Epoch   5/50  train=0.000842  val=0.002493  lr=1.0e-03
+    ↳ best val=0.002493 — checkpoint saved
+  Epoch   6/50  train=0.000660  val=0.002422  lr=1.0e-03
+    ↳ best val=0.002422 — checkpoint saved
+  Epoch   7/50  train=0.000512  val=0.002283  lr=1.0e-03
+    ↳ best val=0.002283 — checkpoint saved
+  Epoch   8/50  train=0.000368  val=0.001957  lr=1.0e-03
+    ↳ best val=0.001957 — checkpoint saved
+  Epoch   9/50  train=0.000240  val=0.001788  lr=1.0e-03
+    ↳ best val=0.001788 — checkpoint saved
+  Epoch  10/50  train=0.000542  val=0.001853  lr=1.0e-03
+  Epoch  11/50  train=0.000440  val=0.001373  lr=1.0e-03
+    ↳ best val=0.001373 — checkpoint saved
+  Epoch  12/50  train=0.000241  val=0.001247  lr=1.0e-03
+    ↳ best val=0.001247 — checkpoint saved
+  Epoch  13/50  train=0.000171  val=0.001232  lr=1.0e-03
+    ↳ best val=0.001232 — checkpoint saved
+  Epoch  14/50  train=0.000260  val=0.001751  lr=1.0e-03
+  Epoch  15/50  train=0.000307  val=0.000763  lr=1.0e-03
+    ↳ best val=0.000763 — checkpoint saved
+  Epoch  16/50  train=0.000160  val=0.001156  lr=1.0e-03
+  Epoch  17/50  train=0.000098  val=0.001648  lr=1.0e-03
+  Epoch  18/50  train=0.000095  val=0.001162  lr=1.0e-03
+  Epoch  19/50  train=0.000078  val=0.001994  lr=1.0e-03
+  Epoch  20/50  train=0.000132  val=0.000360  lr=1.0e-03
+    ↳ best val=0.000360 — checkpoint saved
+  Epoch  21/50  train=0.000105  val=0.000320  lr=1.0e-03
+    ↳ best val=0.000320 — checkpoint saved
+  Epoch  22/50  train=0.000133  val=0.002996  lr=1.0e-03
+  Epoch  23/50  train=0.000958  val=0.003042  lr=1.0e-03
+  Epoch  24/50  train=0.000810  val=0.002482  lr=1.0e-03
+  Epoch  25/50  train=0.001208  val=0.002218  lr=1.0e-03
+  Epoch  26/50  train=0.000635  val=0.002250  lr=1.0e-03
+  Epoch  27/50  train=0.000292  val=0.002567  lr=5.0e-04
+  Epoch  28/50  train=0.000178  val=0.001644  lr=5.0e-04
+  Epoch  29/50  train=0.000118  val=0.001209  lr=5.0e-04
+  Epoch  30/50  train=0.000087  val=0.000344  lr=5.0e-04
+  Epoch  31/50  train=0.000083  val=0.000334  lr=5.0e-04
+  Epoch  32/50  train=0.000114  val=0.000450  lr=5.0e-04
+  Epoch  33/50  train=0.000101  val=0.000471  lr=2.5e-04
+  Epoch  34/50  train=0.000074  val=0.000618  lr=2.5e-04
+  Epoch  35/50  train=0.000057  val=0.000980  lr=2.5e-04
+  Epoch  36/50  train=0.000063  val=0.000241  lr=2.5e-04
+    ↳ best val=0.000241 — checkpoint saved
+  Epoch  37/50  train=0.000081  val=0.000197  lr=2.5e-04
+    ↳ best val=0.000197 — checkpoint saved
+  Epoch  38/50  train=0.000047  val=0.000184  lr=2.5e-04
+    ↳ best val=0.000184 — checkpoint saved
+  Epoch  39/50  train=0.000047  val=0.000208  lr=2.5e-04
+  Epoch  40/50  train=0.000072  val=0.000160  lr=2.5e-04
+    ↳ best val=0.000160 — checkpoint saved
+  Epoch  41/50  train=0.000037  val=0.000753  lr=2.5e-04
+  Epoch  42/50  train=0.000048  val=0.000323  lr=2.5e-04
+  Epoch  43/50  train=0.000059  val=0.000238  lr=2.5e-04
+  Epoch  44/50  train=0.000042  val=0.000292  lr=2.5e-04
+  Epoch  45/50  train=0.000046  val=0.000166  lr=2.5e-04
+  Epoch  46/50  train=0.000039  val=0.000174  lr=1.3e-04
+  Epoch  47/50  train=0.000035  val=0.000134  lr=1.3e-04
+    ↳ best val=0.000134 — checkpoint saved
+  Epoch  48/50  train=0.000024  val=0.000396  lr=1.3e-04
+  Epoch  49/50  train=0.000046  val=0.000133  lr=1.3e-04
+    ↳ best val=0.000133 — checkpoint saved
+  Epoch  50/50  train=0.000045  val=0.000125  lr=1.3e-04
+    ↳ best val=0.000125 — checkpoint saved
+
+Training completed in 215.3s (3.6 min)
+  Epochs run    : 50
+  Best val loss : 0.000125
+  Checkpoint    : /home/student/vohbl/Models/results_raconv/P14/best_raconv_P14.pth
+
+Evaluating on test set  [P14] ...
+
+=======================================================  [P14]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.001355
+  Test MAE                           0.006177
+  Test RMSE                          0.036809
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          10424338.00
+  Test MAE                               468.74
+  Test RMSE                             3228.67
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.001731   0.007637   13248523.00       536.61
+  2        0.001470   0.006579   11307141.00       502.21
+  3        0.001298   0.006303   10035984.00       511.23
+  4        0.001192   0.005822    9196617.00       457.70
+  5        0.001113   0.005460    8583863.00       422.23
+  6        0.001131   0.005401    8715758.00       412.69
+  7        0.001548   0.006035   11882491.00       438.48
+
+  Saved metrics -> /home/student/vohbl/Models/results_raconv/P14/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/results_raconv/P14/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/results_raconv/P14/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/results_raconv/P14/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/results_raconv/P14/pred_vs_actual.png
+
+  All P14 results saved to /home/student/vohbl/Models/results_raconv/P14
+
+================================================================================
+Summary
+P         MSE(norm)    MAE(norm)   RMSE(norm)    RMSE(real)
+------------------------------------------------------------
+P4         0.002680     0.007605     0.051772       4558.20
+P6         0.001846     0.006331     0.042966       3774.52
+P8         0.001564     0.005556     0.039545       3482.29
+P10        0.001734     0.005705     0.041637       3660.40
+P14        0.001355     0.006177     0.036809       3228.67
+================================================================================
