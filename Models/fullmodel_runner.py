@@ -4,12 +4,12 @@ RAConv Experiment Runner
 End-to-end pipeline: load preprocessed SEIR data, train the full RAConv model
 (ResBlock3D + AConvLSTM), evaluate on test set, and produce diagnostic plots.
 
-Trains separately for each forecast horizon P (P7, P10, P14 by default).
+Trains separately for each lookback window P (P4, P6, P8, P10, P14 by default).
 Results are saved to results_raconv/P<N>/ subdirectories.
 
 Usage:
-    python fullmodel_runner.py                          # trains P7, P10, P14
-    python fullmodel_runner.py --p 7 10                 # trains only P7 and P10
+    python fullmodel_runner.py                          # trains P4, P6, P8, P10, P14
+    python fullmodel_runner.py --p 4 10                 # trains only P4 and P10
     python fullmodel_runner.py --epochs 200 --lr 5e-4
 """
 
@@ -168,9 +168,9 @@ def train_model(model: RAConv, loaders: Dict[str, DataLoader],
 def _inverse_transform(tensor: torch.Tensor,
                        norm_min: np.ndarray,
                        norm_max: np.ndarray) -> torch.Tensor:
-    """(B, Q, 1, H, W) normalised → real scale using per-cell min/max."""
-    mn = torch.from_numpy(norm_min).float()   # (1, 16, 16)
-    mx = torch.from_numpy(norm_max).float()   # (1, 16, 16)
+    """(B, Q, 1, H, W) normalised → real scale using global min/max scalars."""
+    mn = torch.from_numpy(norm_min).float()   # scalar (0-D tensor)
+    mx = torch.from_numpy(norm_max).float()   # scalar (0-D tensor)
     return tensor * (mx - mn + 1e-8) + mn
 
 
@@ -211,7 +211,7 @@ def evaluate(model: RAConv, loader: DataLoader,
 
     # --- real-space metrics (inverse-transformed) ---
     if norm_min is not None and norm_max is not None:
-        preds_real   = _inverse_transform(preds, norm_min, norm_max)
+        preds_real   = _inverse_transform(preds, norm_min, norm_max).clamp(min=0)
         targets_real = _inverse_transform(targets, norm_min, norm_max)
 
         real_mse  = ((preds_real - targets_real) ** 2).mean().item()
@@ -386,11 +386,7 @@ def run_experiment(p: int, device: torch.device):
         f"contains X with time dim={P_seq}. "
         f"Re-run preprocessing:  cd Models/Preprocessing && python seir_preprocessing.py"
     )
-    assert Q == 7, (
-        f"DATA MISMATCH: expected forecast horizon Q=7, but the NPZ "
-        f"contains Y with time dim={Q}. "
-        f"Re-run preprocessing:  cd Models/Preprocessing && python seir_preprocessing.py"
-    )
+    # Q is inferred from the NPZ (Y_train time dimension), so this runner supports any pred_len.
 
     print(f"  Lookback window  P = {P_seq}")
     print(f"  Forecast horizon Q = {Q}")
@@ -481,9 +477,9 @@ def run_experiment(p: int, device: torch.device):
 
 def main():
     parser = argparse.ArgumentParser(description="RAConv Experiment Runner")
-    parser.add_argument("--p", type=int, nargs="+", default=[7, 10, 14],
-                        choices=[7, 10, 14],
-                        help="Lookback window(s) P to train (default: 7 10 14); forecast horizon Q is fixed at 7")
+    parser.add_argument("--p", type=int, nargs="+", default=[4, 6, 8, 10, 14],
+                        choices=[4, 6, 8, 10, 14],
+                        help="Lookback window(s) P to train (default: 4 6 8 10 14). Forecast horizon Q is inferred from the NPZ (Y_train time dimension).")
     parser.add_argument("--epochs",     type=int,   default=CFG["epochs"])
     parser.add_argument("--batch_size", type=int,   default=CFG["batch_size"])
     parser.add_argument("--lr",         type=float, default=CFG["lr"])

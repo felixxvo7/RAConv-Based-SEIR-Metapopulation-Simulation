@@ -8,7 +8,7 @@ Pipeline:
   2. Map 256 cities → 16×16 grid (geographic snake-sort)
   3. Reshape to (days, 16, 16) using infected column I
   4. Split chronologically into train / val / test
-  5. Per-cell min-max normalisation (fit on train only)
+  5. Global min-max normalisation (fit on train only)
   6. Sliding-window sampling → X (N, P, 16, 16), Y (N, Q, 16, 16)
   7. Save everything in a single .npz file
 """
@@ -87,7 +87,7 @@ def reshape_to_grid(
     return grid
 
 
-# ── normalisation (global min-max, fit on full dataset) ──────────────────────
+# ── normalisation (global min-max, fit on train split only) ──────────────────
 
 def minmax_fit(grid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Compute global min/max over the entire grid (all days, all cells)."""
@@ -208,8 +208,8 @@ def load_preprocessed(path: str) -> Dict[str, np.ndarray]:
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
 
-    seq_lens = [7, 10, 14]          # P values: lookback window length
-    Q = 7                           # fixed forecast horizon
+    seq_lens = [4, 6, 8, 10, 14]     # P values: lookback window length
+    Q = 7                           # forecast horizon (pred_len)
 
     for P in seq_lens:
         print(f"\n{'=' * 60}")

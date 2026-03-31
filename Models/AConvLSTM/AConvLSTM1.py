@@ -269,6 +269,7 @@ class AConvLSTMLayers(nn.Module):
             # 2. FEEDBACK BRIDGE: Map the 1-channel pred back to input_channels
             #    for the first LSTM layer at the next step
             cur_input = self.input_projection_feedback(pred)
+
             hidden_states = new_hidden_states
 
         predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
@@ -319,8 +320,6 @@ class AConvLSTMModel(nn.Module):
             dropout=dropout,
         )
 
-        self.input_projection_feedback = nn.Conv2d(1, conv3d_channels, kernel_size=1)
-
     def _encode_sequence(self, x):
         """x: (B, T, C, H, W) → (B, T, conv3d_channels, H, W)"""
         # Conv3D expects (B, C, T, H, W)
@@ -348,7 +347,7 @@ class AConvLSTMModel(nn.Module):
         hidden_states = [(h.clone(), c.clone()) for (h, c) in last_state_list]
 
         for _ in range(Q):
-            x = cur_input
+            x = self._encode_frame(cur_input)
 
             new_hidden_states = []
             for layer_idx in range(self.lstm.num_layers):
@@ -361,14 +360,9 @@ class AConvLSTMModel(nn.Module):
                 new_hidden_states.append((h, c))
                 x = h
 
-            # 1. Produce the 1-channel prediction
             pred = self.lstm.output_conv(x)
             predictions.append(pred)
-            
-            # 2. FEEDBACK BRIDGE: Map the 1-channel pred back to input_channels
-            #    for the first LSTM layer at the next step
-            cur_input = self.input_projection_feedback(pred)
+            cur_input = pred
             hidden_states = new_hidden_states
 
-        predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
-        return predictions
+        return torch.stack(predictions, dim=1)

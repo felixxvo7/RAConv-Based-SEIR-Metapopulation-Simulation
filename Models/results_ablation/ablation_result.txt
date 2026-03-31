@@ -1,0 +1,518 @@
+Device: cuda
+
+#################################################################
+  Experiment: P4   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P4.npz
+#################################################################
+  Lookback window  P = 4
+  Forecast horizon Q = 7
+  X_train (170, 4, 16, 16)  Y_train (170, 7, 16, 16)
+  X_val   (50, 4, 16, 16)    Y_val   (50, 7, 16, 16)
+  X_test  (51, 4, 16, 16)   Y_test  (51, 7, 16, 16)
+
+Building AConvLSTMLayers for P4 ...
+  Trainable parameters : 7,354,627
+  Hidden channels      : [256, 256]
+  Kernel sizes         : [3, 3]
+  Layers               : 2
+
+============================================================
+Training AConvLSTMLayers  [P4]
+============================================================
+  Epoch   1/30  train=0.747800  val=0.012497  lr=1.0e-03
+    ↳ best val=0.012497 — checkpoint saved
+  Epoch   2/30  train=0.002789  val=0.003979  lr=1.0e-03
+    ↳ best val=0.003979 — checkpoint saved
+  Epoch   3/30  train=0.003338  val=0.009908  lr=1.0e-03
+  Epoch   4/30  train=0.005069  val=0.003881  lr=1.0e-03
+    ↳ best val=0.003881 — checkpoint saved
+  Epoch   5/30  train=0.003231  val=0.002160  lr=1.0e-03
+    ↳ best val=0.002160 — checkpoint saved
+  Epoch   6/30  train=0.004580  val=0.006129  lr=1.0e-03
+  Epoch   7/30  train=0.002709  val=0.003508  lr=1.0e-03
+  Epoch   8/30  train=0.023875  val=0.016079  lr=1.0e-03
+  Epoch   9/30  train=0.007487  val=0.003471  lr=1.0e-03
+  Epoch  10/30  train=0.004224  val=0.006382  lr=1.0e-03
+  Epoch  11/30  train=0.004215  val=0.004861  lr=5.0e-04
+  Epoch  12/30  train=0.001734  val=0.002154  lr=5.0e-04
+    ↳ best val=0.002154 — checkpoint saved
+  Epoch  13/30  train=0.001067  val=0.002526  lr=5.0e-04
+  Epoch  14/30  train=0.001683  val=0.002492  lr=5.0e-04
+  Epoch  15/30  train=0.001029  val=0.002334  lr=5.0e-04
+  Epoch  16/30  train=0.002037  val=0.002691  lr=5.0e-04
+  Epoch  17/30  train=0.001045  val=0.002496  lr=5.0e-04
+  Epoch  18/30  train=0.001492  val=0.002212  lr=2.5e-04
+  Epoch  19/30  train=0.000804  val=0.002126  lr=2.5e-04
+    ↳ best val=0.002126 — checkpoint saved
+  Epoch  20/30  train=0.000782  val=0.002379  lr=2.5e-04
+  Epoch  21/30  train=0.005948  val=0.004912  lr=2.5e-04
+  Epoch  22/30  train=0.002710  val=0.003692  lr=2.5e-04
+  Epoch  23/30  train=0.001260  val=0.002162  lr=2.5e-04
+  Epoch  24/30  train=0.000884  val=0.002149  lr=2.5e-04
+  Epoch  25/30  train=0.000798  val=0.002169  lr=1.3e-04
+  Epoch  26/30  train=0.000773  val=0.002137  lr=1.3e-04
+  Epoch  27/30  train=0.000757  val=0.002145  lr=1.3e-04
+  Epoch  28/30  train=0.000739  val=0.003179  lr=1.3e-04
+  Epoch  29/30  train=0.003249  val=0.003398  lr=1.3e-04
+  Epoch  30/30  train=0.001078  val=0.002168  lr=1.3e-04
+
+Training completed in 51.1s (0.9 min)
+  Epochs run    : 30
+  Best val loss : 0.002126
+  Checkpoint    : /home/student/vohbl/Models/AConvLSTM/results/P4/best_aconvlstm_P4.pth
+
+Evaluating on test set  [P4] ...
+
+=======================================================  [P4]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.007727
+  Test MAE                           0.008450
+  Test RMSE                          0.087905
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          59994624.00
+  Test MAE                               738.89
+  Test RMSE                             7745.62
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.007874   0.008127   61131464.00       695.14
+  2        0.008020   0.008311   62270284.00       729.17
+  3        0.007964   0.008850   61829672.00       778.20
+  4        0.007831   0.008880   60804100.00       780.79
+  5        0.007663   0.008621   59498784.00       757.66
+  6        0.007473   0.008296   58020060.00       728.60
+  7        0.007265   0.008067   56408052.00       702.66
+
+  Saved metrics -> /home/student/vohbl/Models/AConvLSTM/results/P4/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/AConvLSTM/results/P4/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/AConvLSTM/results/P4/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/AConvLSTM/results/P4/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/AConvLSTM/results/P4/pred_vs_actual.png
+
+  All P4 results saved to /home/student/vohbl/Models/AConvLSTM/results/P4
+
+#################################################################
+  Experiment: P6   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P6.npz
+#################################################################
+  Lookback window  P = 6
+  Forecast horizon Q = 7
+  X_train (168, 6, 16, 16)  Y_train (168, 7, 16, 16)
+  X_val   (48, 6, 16, 16)    Y_val   (48, 7, 16, 16)
+  X_test  (49, 6, 16, 16)   Y_test  (49, 7, 16, 16)
+
+Building AConvLSTMLayers for P6 ...
+  Trainable parameters : 7,354,627
+  Hidden channels      : [256, 256]
+  Kernel sizes         : [3, 3]
+  Layers               : 2
+
+============================================================
+Training AConvLSTMLayers  [P6]
+============================================================
+  Epoch   1/30  train=1.986856  val=0.032190  lr=1.0e-03
+    ↳ best val=0.032190 — checkpoint saved
+  Epoch   2/30  train=0.007930  val=0.002590  lr=1.0e-03
+    ↳ best val=0.002590 — checkpoint saved
+  Epoch   3/30  train=0.002391  val=0.002522  lr=1.0e-03
+    ↳ best val=0.002522 — checkpoint saved
+  Epoch   4/30  train=0.004042  val=0.003627  lr=1.0e-03
+  Epoch   5/30  train=0.003423  val=0.010501  lr=1.0e-03
+  Epoch   6/30  train=0.003760  val=0.002420  lr=1.0e-03
+    ↳ best val=0.002420 — checkpoint saved
+  Epoch   7/30  train=0.001720  val=0.006458  lr=1.0e-03
+  Epoch   8/30  train=0.013678  val=0.003927  lr=1.0e-03
+  Epoch   9/30  train=0.002275  val=0.004079  lr=1.0e-03
+  Epoch  10/30  train=0.002713  val=0.009428  lr=1.0e-03
+  Epoch  11/30  train=0.005351  val=0.003881  lr=1.0e-03
+  Epoch  12/30  train=0.003281  val=0.002348  lr=1.0e-03
+    ↳ best val=0.002348 — checkpoint saved
+  Epoch  13/30  train=0.002762  val=0.004940  lr=1.0e-03
+  Epoch  14/30  train=0.002601  val=0.002959  lr=1.0e-03
+  Epoch  15/30  train=0.005747  val=0.004612  lr=1.0e-03
+  Epoch  16/30  train=0.001791  val=0.002850  lr=1.0e-03
+  Epoch  17/30  train=0.009802  val=0.002283  lr=1.0e-03
+    ↳ best val=0.002283 — checkpoint saved
+  Epoch  18/30  train=0.001645  val=0.002293  lr=1.0e-03
+  Epoch  19/30  train=0.005083  val=0.017879  lr=1.0e-03
+  Epoch  20/30  train=0.005415  val=0.003735  lr=1.0e-03
+  Epoch  21/30  train=0.015430  val=0.008513  lr=1.0e-03
+  Epoch  22/30  train=0.012169  val=0.004233  lr=1.0e-03
+  Epoch  23/30  train=0.002394  val=0.002518  lr=5.0e-04
+  Epoch  24/30  train=0.001092  val=0.007407  lr=5.0e-04
+  Epoch  25/30  train=0.005653  val=0.003878  lr=5.0e-04
+  Epoch  26/30  train=0.001166  val=0.002283  lr=5.0e-04
+  Epoch  27/30  train=0.001940  val=0.005447  lr=5.0e-04
+  Epoch  28/30  train=0.002654  val=0.003059  lr=5.0e-04
+  Epoch  29/30  train=0.001114  val=0.007417  lr=2.5e-04
+  Epoch  30/30  train=0.002784  val=0.003225  lr=2.5e-04
+
+Training completed in 59.5s (1.0 min)
+  Epochs run    : 30
+  Best val loss : 0.002283
+  Checkpoint    : /home/student/vohbl/Models/AConvLSTM/results/P6/best_aconvlstm_P6.pth
+
+Evaluating on test set  [P6] ...
+
+=======================================================  [P6]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.007695
+  Test MAE                           0.015213
+  Test RMSE                          0.087724
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          59667332.00
+  Test MAE                              1261.14
+  Test RMSE                             7724.46
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.008305   0.015296   64456060.00      1313.00
+  2        0.008121   0.015131   62994632.00      1272.38
+  3        0.007927   0.015223   61465424.00      1262.14
+  4        0.007720   0.015269   59847600.00      1256.38
+  5        0.007501   0.015252   58137316.00      1249.48
+  6        0.007269   0.015200   56333664.00      1241.59
+  7        0.007025   0.015125   54436612.00      1232.98
+
+  Saved metrics -> /home/student/vohbl/Models/AConvLSTM/results/P6/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/AConvLSTM/results/P6/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/AConvLSTM/results/P6/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/AConvLSTM/results/P6/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/AConvLSTM/results/P6/pred_vs_actual.png
+
+  All P6 results saved to /home/student/vohbl/Models/AConvLSTM/results/P6
+
+#################################################################
+  Experiment: P8   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P8.npz
+#################################################################
+  Lookback window  P = 8
+  Forecast horizon Q = 7
+  X_train (166, 8, 16, 16)  Y_train (166, 7, 16, 16)
+  X_val   (46, 8, 16, 16)    Y_val   (46, 7, 16, 16)
+  X_test  (47, 8, 16, 16)   Y_test  (47, 7, 16, 16)
+
+Building AConvLSTMLayers for P8 ...
+  Trainable parameters : 7,354,627
+  Hidden channels      : [256, 256]
+  Kernel sizes         : [3, 3]
+  Layers               : 2
+
+============================================================
+Training AConvLSTMLayers  [P8]
+============================================================
+  Epoch   1/30  train=1.592323  val=0.019314  lr=1.0e-03
+    ↳ best val=0.019314 — checkpoint saved
+  Epoch   2/30  train=0.010748  val=0.004953  lr=1.0e-03
+    ↳ best val=0.004953 — checkpoint saved
+  Epoch   3/30  train=0.002297  val=0.004644  lr=1.0e-03
+    ↳ best val=0.004644 — checkpoint saved
+  Epoch   4/30  train=0.011007  val=0.006018  lr=1.0e-03
+  Epoch   5/30  train=0.005300  val=0.004248  lr=1.0e-03
+    ↳ best val=0.004248 — checkpoint saved
+  Epoch   6/30  train=0.019757  val=0.006659  lr=1.0e-03
+  Epoch   7/30  train=0.007585  val=0.003698  lr=1.0e-03
+    ↳ best val=0.003698 — checkpoint saved
+  Epoch   8/30  train=0.002047  val=0.002976  lr=1.0e-03
+    ↳ best val=0.002976 — checkpoint saved
+  Epoch   9/30  train=0.036463  val=0.021997  lr=1.0e-03
+  Epoch  10/30  train=0.006587  val=0.004843  lr=1.0e-03
+  Epoch  11/30  train=0.001893  val=0.002797  lr=1.0e-03
+    ↳ best val=0.002797 — checkpoint saved
+  Epoch  12/30  train=0.002090  val=0.148467  lr=1.0e-03
+  Epoch  13/30  train=0.024270  val=0.004346  lr=1.0e-03
+  Epoch  14/30  train=0.002487  val=0.003224  lr=1.0e-03
+  Epoch  15/30  train=0.001567  val=0.002957  lr=1.0e-03
+  Epoch  16/30  train=0.001402  val=0.002494  lr=1.0e-03
+    ↳ best val=0.002494 — checkpoint saved
+  Epoch  17/30  train=0.002927  val=0.003372  lr=1.0e-03
+  Epoch  18/30  train=0.002225  val=0.002902  lr=1.0e-03
+  Epoch  19/30  train=0.001275  val=0.002909  lr=1.0e-03
+  Epoch  20/30  train=0.008131  val=0.003177  lr=1.0e-03
+  Epoch  21/30  train=0.001038  val=0.002066  lr=1.0e-03
+    ↳ best val=0.002066 — checkpoint saved
+  Epoch  22/30  train=0.000688  val=0.001978  lr=1.0e-03
+    ↳ best val=0.001978 — checkpoint saved
+  Epoch  23/30  train=0.000637  val=0.001905  lr=1.0e-03
+    ↳ best val=0.001905 — checkpoint saved
+  Epoch  24/30  train=0.000608  val=0.001841  lr=1.0e-03
+    ↳ best val=0.001841 — checkpoint saved
+  Epoch  25/30  train=0.000586  val=0.001805  lr=1.0e-03
+    ↳ best val=0.001805 — checkpoint saved
+  Epoch  26/30  train=0.000607  val=0.001789  lr=1.0e-03
+    ↳ best val=0.001789 — checkpoint saved
+  Epoch  27/30  train=0.000584  val=0.001727  lr=1.0e-03
+    ↳ best val=0.001727 — checkpoint saved
+  Epoch  28/30  train=0.000545  val=0.001741  lr=1.0e-03
+  Epoch  29/30  train=0.000540  val=0.001682  lr=1.0e-03
+    ↳ best val=0.001682 — checkpoint saved
+  Epoch  30/30  train=0.000543  val=0.001739  lr=1.0e-03
+
+Training completed in 73.2s (1.2 min)
+  Epochs run    : 30
+  Best val loss : 0.001682
+  Checkpoint    : /home/student/vohbl/Models/AConvLSTM/results/P8/best_aconvlstm_P8.pth
+
+Evaluating on test set  [P8] ...
+
+=======================================================  [P8]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.004952
+  Test MAE                           0.009501
+  Test RMSE                          0.070371
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          37651268.00
+  Test MAE                               717.07
+  Test RMSE                             6136.06
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.003630   0.009576   26195704.00       570.05
+  2        0.003996   0.009161   29487444.00       606.10
+  3        0.004556   0.009049   34377580.00       660.29
+  4        0.005115   0.009430   39141436.00       733.33
+  5        0.005559   0.009696   42865272.00       788.24
+  6        0.005843   0.009803   45225504.00       822.15
+  7        0.005967   0.009795   46265972.00       839.31
+
+  Saved metrics -> /home/student/vohbl/Models/AConvLSTM/results/P8/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/AConvLSTM/results/P8/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/AConvLSTM/results/P8/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/AConvLSTM/results/P8/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/AConvLSTM/results/P8/pred_vs_actual.png
+
+  All P8 results saved to /home/student/vohbl/Models/AConvLSTM/results/P8
+
+#################################################################
+  Experiment: P10   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P10.npz
+#################################################################
+  Lookback window  P = 10
+  Forecast horizon Q = 7
+  X_train (164, 10, 16, 16)  Y_train (164, 7, 16, 16)
+  X_val   (44, 10, 16, 16)    Y_val   (44, 7, 16, 16)
+  X_test  (45, 10, 16, 16)   Y_test  (45, 7, 16, 16)
+
+Building AConvLSTMLayers for P10 ...
+  Trainable parameters : 7,354,627
+  Hidden channels      : [256, 256]
+  Kernel sizes         : [3, 3]
+  Layers               : 2
+
+============================================================
+Training AConvLSTMLayers  [P10]
+============================================================
+  Epoch   1/30  train=0.914503  val=0.009246  lr=1.0e-03
+    ↳ best val=0.009246 — checkpoint saved
+  Epoch   2/30  train=0.010753  val=0.004519  lr=1.0e-03
+    ↳ best val=0.004519 — checkpoint saved
+  Epoch   3/30  train=0.002858  val=0.004917  lr=1.0e-03
+  Epoch   4/30  train=0.013021  val=0.006837  lr=1.0e-03
+  Epoch   5/30  train=0.004816  val=0.028779  lr=1.0e-03
+  Epoch   6/30  train=0.012066  val=0.018483  lr=1.0e-03
+  Epoch   7/30  train=0.009033  val=0.016347  lr=1.0e-03
+  Epoch   8/30  train=0.006565  val=0.005678  lr=5.0e-04
+  Epoch   9/30  train=0.002338  val=0.003452  lr=5.0e-04
+    ↳ best val=0.003452 — checkpoint saved
+  Epoch  10/30  train=0.001323  val=0.002398  lr=5.0e-04
+    ↳ best val=0.002398 — checkpoint saved
+  Epoch  11/30  train=0.001373  val=0.003342  lr=5.0e-04
+  Epoch  12/30  train=0.001563  val=0.002448  lr=5.0e-04
+  Epoch  13/30  train=0.001484  val=0.002781  lr=5.0e-04
+  Epoch  14/30  train=0.001693  val=0.008556  lr=5.0e-04
+  Epoch  15/30  train=0.007541  val=0.005840  lr=5.0e-04
+  Epoch  16/30  train=0.001969  val=0.002857  lr=2.5e-04
+  Epoch  17/30  train=0.000969  val=0.002459  lr=2.5e-04
+  Epoch  18/30  train=0.000844  val=0.002389  lr=2.5e-04
+    ↳ best val=0.002389 — checkpoint saved
+  Epoch  19/30  train=0.001152  val=0.002434  lr=2.5e-04
+  Epoch  20/30  train=0.000862  val=0.002519  lr=2.5e-04
+  Epoch  21/30  train=0.001502  val=0.004810  lr=2.5e-04
+  Epoch  22/30  train=0.001971  val=0.002409  lr=2.5e-04
+  Epoch  23/30  train=0.001099  val=0.002823  lr=2.5e-04
+  Epoch  24/30  train=0.000950  val=0.002728  lr=1.3e-04
+  Epoch  25/30  train=0.000935  val=0.002434  lr=1.3e-04
+  Epoch  26/30  train=0.000839  val=0.002385  lr=1.3e-04
+    ↳ best val=0.002385 — checkpoint saved
+  Epoch  27/30  train=0.000820  val=0.002457  lr=1.3e-04
+  Epoch  28/30  train=0.001481  val=0.002640  lr=1.3e-04
+  Epoch  29/30  train=0.000882  val=0.002381  lr=1.3e-04
+    ↳ best val=0.002381 — checkpoint saved
+  Epoch  30/30  train=0.000810  val=0.002379  lr=1.3e-04
+    ↳ best val=0.002379 — checkpoint saved
+
+Training completed in 77.2s (1.3 min)
+  Epochs run    : 30
+  Best val loss : 0.002379
+  Checkpoint    : /home/student/vohbl/Models/AConvLSTM/results/P10/best_aconvlstm_P10.pth
+
+Evaluating on test set  [P10] ...
+
+=======================================================  [P10]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.007163
+  Test MAE                           0.009627
+  Test RMSE                          0.084632
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          55611248.00
+  Test MAE                               848.24
+  Test RMSE                             7457.29
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.007899   0.009913   61331348.00       873.46
+  2        0.007691   0.009874   59713416.00       870.06
+  3        0.007462   0.009785   57932424.00       862.21
+  4        0.007207   0.009669   55952288.00       851.94
+  5        0.006929   0.009533   53797512.00       839.99
+  6        0.006632   0.009385   51493704.00       826.93
+  7        0.006319   0.009228   49058072.00       813.08
+
+  Saved metrics -> /home/student/vohbl/Models/AConvLSTM/results/P10/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/AConvLSTM/results/P10/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/AConvLSTM/results/P10/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/AConvLSTM/results/P10/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/AConvLSTM/results/P10/pred_vs_actual.png
+
+  All P10 results saved to /home/student/vohbl/Models/AConvLSTM/results/P10
+
+#################################################################
+  Experiment: P14   data: /home/student/vohbl/Models/Preprocessing/preprocessed_output/seir_preprocessed_P14.npz
+#################################################################
+  Lookback window  P = 14
+  Forecast horizon Q = 7
+  X_train (160, 14, 16, 16)  Y_train (160, 7, 16, 16)
+  X_val   (40, 14, 16, 16)    Y_val   (40, 7, 16, 16)
+  X_test  (41, 14, 16, 16)   Y_test  (41, 7, 16, 16)
+
+Building AConvLSTMLayers for P14 ...
+  Trainable parameters : 7,354,627
+  Hidden channels      : [256, 256]
+  Kernel sizes         : [3, 3]
+  Layers               : 2
+
+============================================================
+Training AConvLSTMLayers  [P14]
+============================================================
+  Epoch   1/30  train=1.812799  val=0.017831  lr=1.0e-03
+    ↳ best val=0.017831 — checkpoint saved
+  Epoch   2/30  train=0.010065  val=0.004689  lr=1.0e-03
+    ↳ best val=0.004689 — checkpoint saved
+  Epoch   3/30  train=0.002597  val=0.004008  lr=1.0e-03
+    ↳ best val=0.004008 — checkpoint saved
+  Epoch   4/30  train=0.009351  val=0.003533  lr=1.0e-03
+    ↳ best val=0.003533 — checkpoint saved
+  Epoch   5/30  train=0.008030  val=0.004350  lr=1.0e-03
+  Epoch   6/30  train=0.002637  val=0.003530  lr=1.0e-03
+    ↳ best val=0.003530 — checkpoint saved
+  Epoch   7/30  train=0.013050  val=0.031381  lr=1.0e-03
+  Epoch   8/30  train=0.009600  val=0.007124  lr=1.0e-03
+  Epoch   9/30  train=0.002535  val=0.004167  lr=1.0e-03
+  Epoch  10/30  train=0.008568  val=0.015933  lr=1.0e-03
+  Epoch  11/30  train=0.006200  val=0.004823  lr=1.0e-03
+  Epoch  12/30  train=0.001633  val=0.002451  lr=1.0e-03
+    ↳ best val=0.002451 — checkpoint saved
+  Epoch  13/30  train=0.000991  val=0.002196  lr=1.0e-03
+    ↳ best val=0.002196 — checkpoint saved
+  Epoch  14/30  train=0.000646  val=0.001903  lr=1.0e-03
+    ↳ best val=0.001903 — checkpoint saved
+  Epoch  15/30  train=0.000983  val=0.001988  lr=1.0e-03
+  Epoch  16/30  train=0.000612  val=0.001796  lr=1.0e-03
+    ↳ best val=0.001796 — checkpoint saved
+  Epoch  17/30  train=0.000531  val=0.001746  lr=1.0e-03
+    ↳ best val=0.001746 — checkpoint saved
+  Epoch  18/30  train=0.000486  val=0.001659  lr=1.0e-03
+    ↳ best val=0.001659 — checkpoint saved
+  Epoch  19/30  train=0.002101  val=0.001726  lr=1.0e-03
+  Epoch  20/30  train=0.000833  val=0.001879  lr=1.0e-03
+  Epoch  21/30  train=0.000579  val=0.001799  lr=1.0e-03
+  Epoch  22/30  train=0.000532  val=0.001727  lr=1.0e-03
+  Epoch  23/30  train=0.000513  val=0.001741  lr=1.0e-03
+  Epoch  24/30  train=0.000486  val=0.002294  lr=5.0e-04
+  Epoch  25/30  train=0.000738  val=0.001551  lr=5.0e-04
+    ↳ best val=0.001551 — checkpoint saved
+  Epoch  26/30  train=0.000496  val=0.001559  lr=5.0e-04
+  Epoch  27/30  train=0.000438  val=0.001493  lr=5.0e-04
+    ↳ best val=0.001493 — checkpoint saved
+  Epoch  28/30  train=0.000419  val=0.001500  lr=5.0e-04
+  Epoch  29/30  train=0.000405  val=0.001442  lr=5.0e-04
+    ↳ best val=0.001442 — checkpoint saved
+  Epoch  30/30  train=0.000395  val=0.001428  lr=5.0e-04
+    ↳ best val=0.001428 — checkpoint saved
+
+Training completed in 94.2s (1.6 min)
+  Epochs run    : 30
+  Best val loss : 0.001428
+  Checkpoint    : /home/student/vohbl/Models/AConvLSTM/results/P14/best_aconvlstm_P14.pth
+
+Evaluating on test set  [P14] ...
+
+=======================================================  [P14]
+
+  Metric (normalised)                   Value
+  --------------------------------------------
+  Test MSE                           0.002812
+  Test MAE                           0.008424
+  Test RMSE                          0.053025
+
+  Metric (real scale)                     Value
+  ----------------------------------------------
+  Test MSE                          19828482.00
+  Test MAE                               538.20
+  Test RMSE                             4452.92
+
+=======================================================
+
+Per-step breakdown:
+  Step    MSE(norm)  MAE(norm)     MSE(real)    MAE(real)
+  --------------------------------------------------------
+  1        0.001216   0.007784    4690680.50       258.32
+  2        0.001488   0.007540    7726634.00       335.97
+  3        0.002058   0.008067   13366163.00       461.63
+  4        0.002806   0.008653   20241746.00       580.71
+  5        0.003539   0.008959   26686442.00       665.84
+  6        0.004111   0.009029   31569396.00       719.00
+  7        0.004463   0.008936   34518312.00       745.95
+
+  Saved metrics -> /home/student/vohbl/Models/AConvLSTM/results/P14/metrics.json
+  Saved loss curves -> /home/student/vohbl/Models/AConvLSTM/results/P14/loss_curves.png
+  Saved per-step metrics -> /home/student/vohbl/Models/AConvLSTM/results/P14/per_step_metrics.png
+  Saved spatial error map -> /home/student/vohbl/Models/AConvLSTM/results/P14/spatial_error.png
+  Saved prediction plots -> /home/student/vohbl/Models/AConvLSTM/results/P14/pred_vs_actual.png
+
+  All P14 results saved to /home/student/vohbl/Models/AConvLSTM/results/P14
+
+================================================================================
+Summary
+P         MSE(norm)    MAE(norm)   RMSE(norm)    RMSE(real)
+------------------------------------------------------------
+P4         0.007727     0.008450     0.087905       7745.62
+P6         0.007695     0.015213     0.087724       7724.46
+P8         0.004952     0.009501     0.070371       6136.06
+P10        0.007163     0.009627     0.084632       7457.29
+P14        0.002812     0.008424     0.053025       4452.92
+================================================================================
