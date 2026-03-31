@@ -19,13 +19,6 @@ venv/
 *.log
 *.tmp
 
-# Data and model outputs
-checkpoints/
-*.pth
-*.pt
-*.npz
-*.npy
-
 # IDEs
 .vscode/
 .idea/
