@@ -276,7 +276,7 @@ def main():
         aconvlstm_timeline=aconvlstm_timeline_real,
         target_timeline=target_timeline_real,
         save_path=timeline_real_path,
-        title="RAConv vs AConvLSTM: Full Test Timeline Prediction vs Ground Truth (Real Scale)",
+        title="RAConv vs AConvLSTM: Average Daily Infected Count Per City Timeline Prediction",
         y_label="Infected Count",
         start_day_offset=lookback_steps,
     )
