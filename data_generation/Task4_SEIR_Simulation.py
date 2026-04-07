@@ -1,5 +1,5 @@
 """
-Task 3: SEIR ODE Integration (Optimized with Time-Varying Interventions)
+Task 4: SEIR ODE Integration (Optimized with Time-Varying Interventions)
 =========================================================================
 Implements a coupled SEIR metapopulation model across 256 Texas cities.
 
@@ -36,16 +36,12 @@ Bug fixes applied
 """
 
 import os
+import time
+
 import numpy as np
 import pandas as pd
 from scipy.integrate import solve_ivp
-import time
 
-# =============================================================================
-# Configuration
-# =============================================================================
-
-# Path to mobility matrix CSV (same directory as this script by default)
 MOBILITY_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'mobility_matrix.csv')
 
@@ -133,7 +129,7 @@ def beta_t(t):
 
 
 def beta_t_stochastic(t, sigma_noise=0.05):
-    """1
+    """
     Stochastic wrapper around beta_t().
     FOR ENSEMBLE CALLERS ONLY — do NOT call inside the ODE integrator.
     Draw noise outside solve_ivp and pass via closure for proper ensemble use.
@@ -706,13 +702,11 @@ def main():
     print("Task 4: SEIR ODE Integration (Time-Varying Interventions)")
     print("=" * 60)
 
-    # Load mobility matrix and derive populations from it
     tx_pd, theta = load_mobility_csv()
     print(f"\nLoaded {len(tx_pd)} cities")
     print(f"Mobility matrix shape: {theta.shape}")
     print(f"Total mobility flow sum: {theta.sum():,.0f}")
 
-    # Baseline run: deterministic β
     results, t = run_simulation(tx_pd, theta, stochastic=False)
 
     if results is None:
@@ -723,7 +717,7 @@ def main():
     save_results(results, t, tx_pd)
 
     print("\n" + "=" * 60)
-    print("Task 3 Complete!")
+    print("Task 4 Complete!")
     print("=" * 60)
 
 

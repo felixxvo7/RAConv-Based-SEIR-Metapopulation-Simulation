@@ -67,14 +67,11 @@ class ResBlock3D(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Conv1 -> BN1
         x = self.conv1(x)
         x = self.bn1(x)
 
-        # Shortcut #1 branches here
         shortcut1 = x
 
-        # Conv2 -> BN2 -> ReLU -> Conv3 -> BN3
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
@@ -82,14 +79,11 @@ class ResBlock3D(nn.Module):
         x = self.conv3(x)
         x = self.bn3(x)
 
-        # First residual addition -> ReLU
         x = x + shortcut1
         x = self.relu(x)
 
-        # Shortcut #2 branches here
         shortcut2 = x
 
-        # Conv4 -> BN4 -> ReLU -> Conv5 -> BN5
         x = self.conv4(x)
         x = self.bn4(x)
         x = self.relu(x)
@@ -97,7 +91,6 @@ class ResBlock3D(nn.Module):
         x = self.conv5(x)
         x = self.bn5(x)
 
-        # Second residual addition -> ReLU
         x = x + shortcut2
         x = self.relu(x)
 

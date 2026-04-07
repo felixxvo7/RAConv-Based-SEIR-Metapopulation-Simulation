@@ -4,12 +4,12 @@ RAConv Experiment Runner
 End-to-end pipeline: load preprocessed SEIR data, train the full RAConv model
 (ResBlock3D + AConvLSTM), evaluate on test set, and produce diagnostic plots.
 
-Trains separately for each lookback window P (P4, P6, P8, P10, P14 by default).
+Trains separately for each lookback window P (P4, P6, P8, P14 by default).
 Results are saved to results_raconv/P<N>/ subdirectories.
 
 Usage:
-    python fullmodel_runner.py                          # trains P4, P6, P8, P10, P14
-    python fullmodel_runner.py --p 4 10                 # trains only P4 and P10
+    python fullmodel_runner.py                          # trains P4, P6, P8, P14
+    python fullmodel_runner.py --p 4 8                  # trains only P4 and P8
     python fullmodel_runner.py --epochs 200 --lr 5e-4
 """
 
@@ -28,7 +28,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# ── locate project modules ───────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
@@ -318,14 +317,14 @@ def _print_metrics(results: Dict, p_label: str):
     w = 55
     print(f"\n{'=' * w}  [{p_label}]")
 
-    # --- normalised-space ---
+    # normalised space
     print(f"\n  {'Metric (normalised)':<30s} {'Value':>12s}")
     print(f"  {'-' * 44}")
     print(f"  {'Test MSE':<30s} {results['MSE']:12.6f}")
     print(f"  {'Test MAE':<30s} {results['MAE']:12.6f}")
     print(f"  {'Test RMSE':<30s} {results['RMSE']:12.6f}")
 
-    # --- real-space ---
+    # real space
     if "real_MSE" in results:
         print(f"\n  {'Metric (real scale)':<30s} {'Value':>14s}")
         print(f"  {'-' * 46}")
@@ -335,7 +334,7 @@ def _print_metrics(results: Dict, p_label: str):
 
     print(f"\n{'=' * w}")
 
-    # --- per-step breakdown (normalised + real) ---
+    # per-step breakdown
     has_real = "real_per_step_mse" in results
     print("\nPer-step breakdown:")
     if has_real:
@@ -371,7 +370,7 @@ def run_experiment(p: int, device: torch.device):
     print(f"  Experiment: {p_label}   data: {npz_path}")
     print(f"{'#' * 65}")
 
-    # ── data ──────────────────────────────────────────────────────────────
+    # data
     if not npz_path.exists():
         raise FileNotFoundError(
             f"{npz_path} not found. Re-run preprocessing:\n"
@@ -386,7 +385,6 @@ def run_experiment(p: int, device: torch.device):
         f"contains X with time dim={P_seq}. "
         f"Re-run preprocessing:  cd Models/Preprocessing && python seir_preprocessing.py"
     )
-    # Q is inferred from the NPZ (Y_train time dimension), so this runner supports any pred_len.
 
     print(f"  Lookback window  P = {P_seq}")
     print(f"  Forecast horizon Q = {Q}")
@@ -396,14 +394,14 @@ def run_experiment(p: int, device: torch.device):
 
     loaders = build_loaders(data, CFG["batch_size"])
 
-    # ── model ─────────────────────────────────────────────────────────────
+    # model
     print(f"\nBuilding RAConv for {p_label} ...")
     model = build_model(Q, device)
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"  Trainable parameters : {total_params:,}")
     print(f"  Forecast steps (Q)   : {Q}")
 
-    # ── train ─────────────────────────────────────────────────────────────
+    # train
     print(f"\n{'=' * 60}")
     print(f"Training RAConv  [{p_label}]")
     print("=" * 60)
@@ -417,14 +415,14 @@ def run_experiment(p: int, device: torch.device):
     print(f"  Best val loss : {min(val_hist):.6f}")
     print(f"  Checkpoint    : {ckpt_path}")
 
-    # ── evaluate ──────────────────────────────────────────────────────────
+    # evaluate
     print(f"\nEvaluating on test set  [{p_label}] ...")
     norm_min = data.get("norm_min", None)
     norm_max = data.get("norm_max", None)
     results = evaluate(model, loaders["test"], device, norm_min, norm_max)
     _print_metrics(results, p_label)
 
-    # ── save metrics ──────────────────────────────────────────────────────
+    # save metrics
     metrics = {
         "P": p,
         "MSE":  results["MSE"],
@@ -450,7 +448,7 @@ def run_experiment(p: int, device: torch.device):
         json.dump(metrics, f, indent=2)
     print(f"\n  Saved metrics -> {metrics_path}")
 
-    # ── plots ─────────────────────────────────────────────────────────────
+    # plots
     plot_loss_curves(train_hist, val_hist,
                      str(out_dir / "loss_curves.png"), p_label)
 
@@ -477,9 +475,9 @@ def run_experiment(p: int, device: torch.device):
 
 def main():
     parser = argparse.ArgumentParser(description="RAConv Experiment Runner")
-    parser.add_argument("--p", type=int, nargs="+", default=[4, 6, 8, 10, 14],
-                        choices=[4, 6, 8, 10, 14],
-                        help="Lookback window(s) P to train (default: 4 6 8 10 14). Forecast horizon Q is inferred from the NPZ (Y_train time dimension).")
+    parser.add_argument("--p", type=int, nargs="+", default=[4, 6, 8, 14],
+                        choices=[4, 6, 8, 14],
+                        help="Lookback window(s) P to train (default: 4 6 8 14).")
     parser.add_argument("--epochs",     type=int,   default=CFG["epochs"])
     parser.add_argument("--batch_size", type=int,   default=CFG["batch_size"])
     parser.add_argument("--lr",         type=float, default=CFG["lr"])

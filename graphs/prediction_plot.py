@@ -34,7 +34,6 @@ def load_npz(npz_path: Path):
 
 
 def build_test_loader(x_test: np.ndarray, y_test: np.ndarray, batch_size: int, model_type: str):
-    # RAConv expects (B, C, T, H, W); AConvLSTM expects (B, T, C, H, W)
     if model_type == "raconv":
         x_tensor = torch.from_numpy(x_test).float().unsqueeze(1)
     else:
@@ -80,7 +79,6 @@ def plot_average_predictions_comparison(
     title: str,
     y_label: str,
 ):
-    # Average over test samples and spatial map: (N, Q, 1, H, W) -> (Q,)
     raconv_mean = raconv_preds.mean(dim=(0, 2, 3, 4)).numpy()
     aconvlstm_mean = aconvlstm_preds.mean(dim=(0, 2, 3, 4)).numpy()
     target_mean = targets.mean(dim=(0, 2, 3, 4)).numpy()
@@ -222,7 +220,6 @@ def main():
         dropout=0.2,
     ).to(device)
 
-    # Warm-up pass creates lazy peephole params before loading weights.
     with torch.no_grad():
         raconv_warmup = torch.zeros(
             1,

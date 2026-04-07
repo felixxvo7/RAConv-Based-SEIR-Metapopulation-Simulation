@@ -39,7 +39,6 @@ def load_npz(npz_path: Path):
 
 
 def build_test_loader(x_test: np.ndarray, y_test: np.ndarray, batch_size: int, model_type: str):
-    # RAConv expects (B, C, T, H, W); AConvLSTM expects (B, T, C, H, W)
     if model_type == "raconv":
         x_tensor = torch.from_numpy(x_test).float().unsqueeze(1)
     else:
@@ -256,7 +255,6 @@ def main():
         dropout=0.2,
     ).to(device)
 
-    # Warm-up to initialize lazy parameters.
     with torch.no_grad():
         raconv_warmup = torch.zeros(1, 1, seq_len, 16, 16, device=device, dtype=torch.float32)
         _ = raconv_model(raconv_warmup)

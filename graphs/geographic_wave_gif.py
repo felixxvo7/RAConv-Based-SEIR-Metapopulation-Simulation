@@ -13,26 +13,23 @@ Outputs
     plot/geographic_wave_spread.gif
 """
 
+import io
 import os
-import numpy as np
-import pandas as pd
+
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from matplotlib.patches import FancyBboxPatch
-from matplotlib.collections import PathCollection
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from PIL import Image
-import io
 
-# ── paths ─────────────────────────────────────────────────────────────────────
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEIR_CSV = os.path.join(ROOT, "Models", "Preprocessing",
                         "seir_baseline_300days_256cities.csv")
 GEO_CSV  = os.path.join(ROOT, "Models", "Preprocessing", "tx_pd.csv")
 OUT_GIF  = os.path.join(ROOT, "plot", "geographic_wave_spread.gif")
 
-# ── wave definitions (from calibrated β schedule) ────────────────────────────
 WAVE_PHASES = [
     (0,   99,  "Wave 1 — Exponential Growth",  "#e74c3c"),
     (100, 169, "NPI Trough — Decline",          "#3498db"),

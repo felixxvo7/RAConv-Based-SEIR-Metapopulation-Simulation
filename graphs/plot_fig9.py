@@ -56,7 +56,6 @@ def collect_model_metrics(base_dir: Path, p_values):
         metrics_path = base_dir / f"P{p}" / "metrics.json"
         metrics = load_metrics(metrics_path)
 
-        # Case-insensitive lookup for metric keys to handle varied output formats
         metrics_upper = {k.upper(): v for k, v in metrics.items()}
 
         for key in results.keys():
@@ -206,7 +205,6 @@ def main():
     requested_p = sorted(args.p)
     valid_p = []
 
-    # Pre-filter P values to ensure they exist in both experiment directories
     for p in requested_p:
         r_path = args.raconv_dir / f"P{p}" / "metrics.json"
         a_path = args.aconvlstm_dir / f"P{p}" / "metrics.json"

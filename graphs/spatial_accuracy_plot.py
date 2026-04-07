@@ -21,6 +21,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 import torch
 
@@ -115,7 +116,6 @@ def main():
     args.outdir.mkdir(parents=True, exist_ok=True)
     print(f"Device: {device}")
 
-    # ── data ──────────────────────────────────────────────────────────────
     data = load_npz(args.npz)
     X_test = data["X_test"]
     Y_test = data["Y_test"]
@@ -128,7 +128,6 @@ def main():
     pairs = find_all_windows_for_day(args.day, P, Q, n_windows)
     print(f"Day {args.day} -> {len(pairs)} (window, step) pairs: {pairs}")
 
-    # ── models ────────────────────────────────────────────────────────────
     raconv_model = RAConv(in_channels=1, out_steps=Q).to(device)
     aconv_model = AConvLSTMLayers(
         input_channels=1,
@@ -151,7 +150,6 @@ def main():
         torch.load(args.aconvlstm_ckpt, map_location=device, weights_only=True)
     )
 
-    # ── inference: average over ALL windows that predict this day ─────────
     gt_acc     = np.zeros((GRID_H, GRID_W), dtype=np.float64)
     raconv_acc = np.zeros((GRID_H, GRID_W), dtype=np.float64)
     aconv_acc  = np.zeros((GRID_H, GRID_W), dtype=np.float64)
@@ -173,13 +171,9 @@ def main():
     raconv_norm = (raconv_acc / n).astype(np.float32)
     aconv_norm  = (aconv_acc / n).astype(np.float32)
 
-    # ── inverse-transform to real scale ───────────────────────────────────
     gt_real     = inverse_transform(gt_norm, norm_min, norm_max)
     raconv_real = np.clip(inverse_transform(raconv_norm, norm_min, norm_max), 0, None)
     aconv_real  = np.clip(inverse_transform(aconv_norm, norm_min, norm_max), 0, None)
-
-    # ── log-scale transformation for visualization ─────────────────────
-    from matplotlib.colors import LogNorm
 
     all_vals = np.concatenate([gt_real.ravel(), raconv_real.ravel(), aconv_real.ravel()])
     positive_vals = all_vals[all_vals > 0]
@@ -197,7 +191,6 @@ def main():
 
     log_norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    # ── plot ──────────────────────────────────────────────────────────────
     fig = plt.figure(figsize=(19, 6))
     gs = fig.add_gridspec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.30)
 
@@ -237,7 +230,6 @@ def main():
     plt.close(fig)
     print(f"\nSaved -> {save_path}")
 
-    # ── quick spatial metrics ─────────────────────────────────────────────
     raconv_mse  = np.mean((raconv_real - gt_real) ** 2)
     aconv_mse   = np.mean((aconv_real  - gt_real) ** 2)
     raconv_mae  = np.mean(np.abs(raconv_real - gt_real))

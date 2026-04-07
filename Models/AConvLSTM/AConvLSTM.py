@@ -9,8 +9,9 @@ import torch.nn as nn
 
 
 class AConvLSTMCell(nn.Module):
-    """a
-    Initialize ConvLSTM cell.
+    """
+    Single AConvLSTM cell with optional attention-based gating.
+
     Parameters
     ----------
     input_channels: int
@@ -32,19 +33,16 @@ class AConvLSTMCell(nn.Module):
         self.hidden_channels = hidden_channels
         self.use_attention = use_attention
 
-        # W_x*
         self.Wxi = nn.Conv2d(input_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Wxf = nn.Conv2d(input_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Wxc = nn.Conv2d(input_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Wxo = nn.Conv2d(input_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
 
-        # W_h*
         self.Whi = nn.Conv2d(hidden_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Whf = nn.Conv2d(hidden_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Whc = nn.Conv2d(hidden_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
         self.Who = nn.Conv2d(hidden_channels, hidden_channels, kernel_size, padding=padding, bias=bias)
 
-        # Peepholes
         self.Wci = None
         self.Wcf = None
         self.Wco = None
@@ -70,7 +68,6 @@ class AConvLSTMCell(nn.Module):
 
         return H, C
 
-    # Shared helper to turn a feature map into attention gate via exp / max
     def _attention_gate(self, Z):
         """
         Z: [B, C, H, W]
@@ -84,14 +81,12 @@ class AConvLSTMCell(nn.Module):
 
     def forward(self, X, H_prev, C_prev):
         # ======================= INPUT GATE =======================
-        # i_t attention gate
         if self.use_attention:
             # pre-activation for input gate including peephole, then tanh as in Eq. (7)
             pre_i = self.Wxi(X) + self.Whi(H_prev)
-            pre_i = torch.tanh(pre_i)                     # tanh before attention projection
-            # project with Wi_att and build attention via exp / max
+            pre_i = torch.tanh(pre_i)
             Z_i = self.Wi_att(pre_i)
-            i = self._attention_gate(Z_i)                 # attention-based input gate
+            i = self._attention_gate(Z_i)
         else:
             # i_t = σ(Wxi*Xt + Whi*Ht−1 + Wci◦Ct−1 + bi)
             i = torch.sigmoid(self.Wxi(X) + self.Whi(H_prev) + self.Wci * C_prev)
@@ -114,10 +109,9 @@ class AConvLSTMCell(nn.Module):
         if self.use_attention:
             # pre-activation for output gate including peephole, then tanh
             pre_o = self.Wxo(X) + self.Who(H_prev) + self.Wco * C
-            pre_o = torch.tanh(pre_o)                    # tanh before attention projection
-            # project with Wo_att and build attention gate
+            pre_o = torch.tanh(pre_o)
             Z_o = self.Wo_att(pre_o)
-            o = self._attention_gate(Z_o)                # attention-based output gate
+            o = self._attention_gate(Z_o)
         else:
             # o_t = σ(Wxo*Xt + Who*Ht−1 + Wco◦Ct + bo)
             o = torch.sigmoid(
@@ -150,22 +144,21 @@ class AConvLSTMLayers(nn.Module):
                     each element of the list is a tuple (h, c) for hidden state and memory
     """
 
-    def __init__(self, input_channels, hidden_channels=[256,256], kernel_size=[3,3], num_layers=2, bias=True, use_attention=True, dropout=0.0):
+    def __init__(self, input_channels, hidden_channels=[256, 256], kernel_size=[3, 3], num_layers=2, bias=True, use_attention=True, dropout=0.0):
         super().__init__()
 
         self.input_channels = input_channels
         self.hidden_channels = hidden_channels
         self.kernel_size = kernel_size
         self.bias = bias
-        self.num_layers = num_layers # Fixed to 2 layers as per Figure 6
+        self.num_layers = num_layers
         self.use_attention = use_attention
         self.dropout = nn.Dropout2d(dropout) if dropout > 0 else None
         self.output_conv = nn.Conv2d(self.hidden_channels[-1], 1, kernel_size=1)
         self.input_projection_feedback = nn.Conv2d(1, input_channels, kernel_size=1)
 
-        # Other than first layer, input channels = hidden channels of previous layer
         cell_list = []
-        for i in range(0, self.num_layers):
+        for i in range(self.num_layers):
             cur_input_channels = self.input_channels if i == 0 else self.hidden_channels[i - 1]
 
             cell_list.append(AConvLSTMCell(input_channels=cur_input_channels,
@@ -195,7 +188,6 @@ class AConvLSTMLayers(nn.Module):
         layer_output_list = []
         last_state_list = []
 
-        # T/sequence length
         seq_len = input_tensor.size(1)
         cur_layer_input = input_tensor
 
@@ -246,10 +238,8 @@ class AConvLSTMLayers(nn.Module):
 
         for _ in range(Q):
             new_hidden_states = []
+            x = cur_input
 
-            x = cur_input  # input to first layer
-
-            # pass through stacked ConvLSTM layers
             for layer_idx in range(self.num_layers):
                 h, c = hidden_states[layer_idx]
 
@@ -260,15 +250,14 @@ class AConvLSTMLayers(nn.Module):
                 )
 
                 new_hidden_states.append((h, c))
-                x = h  # output becomes next layer input
+                x = h
 
-            # 1. Produce the 1-channel prediction
-            pred = self.output_conv(x) 
+            pred = self.output_conv(x)
             predictions.append(pred)
 
-            # 2. FEEDBACK BRIDGE: Map the 1-channel pred back to input_channels
-            #    for the first LSTM layer at the next step
+            # Map the 1-channel prediction back to input_channels for the next step
             cur_input = self.input_projection_feedback(pred)
+
             hidden_states = new_hidden_states
 
         predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
@@ -348,7 +337,7 @@ class AConvLSTMModel(nn.Module):
         hidden_states = [(h.clone(), c.clone()) for (h, c) in last_state_list]
 
         for _ in range(Q):
-            x = cur_input
+            x = self._encode_frame(cur_input)
 
             new_hidden_states = []
             for layer_idx in range(self.lstm.num_layers):
@@ -361,14 +350,11 @@ class AConvLSTMModel(nn.Module):
                 new_hidden_states.append((h, c))
                 x = h
 
-            # 1. Produce the 1-channel prediction
             pred = self.lstm.output_conv(x)
             predictions.append(pred)
-            
-            # 2. FEEDBACK BRIDGE: Map the 1-channel pred back to input_channels
-            #    for the first LSTM layer at the next step
+
+            # Map the 1-channel prediction back to input_channels for the next step
             cur_input = self.input_projection_feedback(pred)
             hidden_states = new_hidden_states
 
-        predictions = torch.stack(predictions, dim=1)  # (B, Q, 1, H, W)
-        return predictions
+        return torch.stack(predictions, dim=1)

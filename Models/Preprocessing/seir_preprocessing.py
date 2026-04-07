@@ -14,14 +14,15 @@ Pipeline:
 """
 
 import os
+from typing import Dict, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Tuple, Dict
 
 # ── constants ────────────────────────────────────────────────────────────────
 GRID_H, GRID_W = 16, 16
 NUM_CITIES = GRID_H * GRID_W          # 256
-EPS = 1e-8                             # avoids division by zero in normalisation
+EPS = 1e-8
 
 
 # ── data loading ─────────────────────────────────────────────────────────────
@@ -208,7 +209,7 @@ def load_preprocessed(path: str) -> Dict[str, np.ndarray]:
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
 
-    seq_lens = [4, 6, 8, 10, 14]     # P values: lookback window length
+    seq_lens = [4, 6, 8, 14]          # P values: lookback window length
     Q = 7                           # forecast horizon (pred_len)
 
     for P in seq_lens:
